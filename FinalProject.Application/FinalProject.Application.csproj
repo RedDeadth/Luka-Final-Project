@@ -4,6 +4,12 @@
     <ProjectReference Include="..\FinalProject.Domain\FinalProject.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Commands\User\" />
+    <Folder Include="Queries\User\" />
+    <Folder Include="UseCases\User\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
