@@ -5,14 +5,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Commands\User\ActivateUser\" />
-    <Folder Include="Commands\User\AssignRole\" />
-    <Folder Include="Commands\User\ChangeEmail\" />
-    <Folder Include="Commands\User\ChangePassword\" />
-    <Folder Include="Commands\User\CreateUser\" />
-    <Folder Include="Commands\User\DeactivateUser\" />
-    <Folder Include="Commands\User\DeleteUser\" />
-    <Folder Include="Commands\User\UpdateUser\" />
     <Folder Include="Queries\User\" />
     <Folder Include="UseCases\User\" />
   </ItemGroup>
