@@ -10,6 +10,7 @@ namespace FinalProject.API.Controllers;
 public class ProductController : ControllerBase
 {
     private readonly IProductService _productService;
+    private const int MaxPageSize = 100;
 
     public ProductController(IProductService productService)
     {
@@ -31,10 +32,28 @@ public class ProductController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllProducts()
+    public async Task<IActionResult> GetAllProducts([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var products = await _productService.GetAllProducts().ToListAsync();
-        return Ok(new { success = true, data = products });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _productService.GetAllProducts();
+        var totalCount = await query.CountAsync();
+        var products = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = products,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 
     [HttpGet("{id}")]
@@ -52,10 +71,28 @@ public class ProductController : ControllerBase
     }
 
     [HttpGet("supplier/{supplierId}")]
-    public async Task<IActionResult> GetProductsBySupplier(int supplierId)
+    public async Task<IActionResult> GetProductsBySupplier(int supplierId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var products = await _productService.GetProductsBySupplier(supplierId).ToListAsync();
-        return Ok(new { success = true, data = products });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _productService.GetProductsBySupplier(supplierId);
+        var totalCount = await query.CountAsync();
+        var products = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = products,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 
     [HttpPut("{id}")]

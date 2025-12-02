@@ -10,6 +10,7 @@ namespace FinalProject.API.Controllers;
 public class CouponController : ControllerBase
 {
     private readonly ICouponService _couponService;
+    private const int MaxPageSize = 100;
 
     public CouponController(ICouponService couponService)
     {
@@ -45,17 +46,53 @@ public class CouponController : ControllerBase
     }
 
     [HttpGet("campaign/{campaignId}")]
-    public async Task<IActionResult> GetCouponsByCampaign(int campaignId)
+    public async Task<IActionResult> GetCouponsByCampaign(int campaignId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var coupons = await _couponService.GetCouponsByCampaign(campaignId).ToListAsync();
-        return Ok(new { success = true, data = coupons });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _couponService.GetCouponsByCampaign(campaignId);
+        var totalCount = await query.CountAsync();
+        var coupons = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = coupons,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 
     [HttpGet("supplier/{supplierId}")]
-    public async Task<IActionResult> GetCouponsBySupplier(int supplierId)
+    public async Task<IActionResult> GetCouponsBySupplier(int supplierId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var coupons = await _couponService.GetCouponsBySupplier(supplierId).ToListAsync();
-        return Ok(new { success = true, data = coupons });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _couponService.GetCouponsBySupplier(supplierId);
+        var totalCount = await query.CountAsync();
+        var coupons = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = coupons,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 
     [HttpGet("validate/{code}")]

@@ -11,6 +11,7 @@ namespace FinalProject.API.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly IAdminService _adminService;
+    private const int MaxPageSize = 100;
 
     public AdminController(IAdminService adminService)
     {
@@ -18,10 +19,28 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("companies/pending")]
-    public async Task<IActionResult> GetPendingCompanies()
+    public async Task<IActionResult> GetPendingCompanies([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var companies = await _adminService.GetPendingCompanies().ToListAsync();
-        return Ok(new { success = true, data = companies });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _adminService.GetPendingCompanies();
+        var totalCount = await query.CountAsync();
+        var companies = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = companies,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 
     [HttpPost("companies/approve")]

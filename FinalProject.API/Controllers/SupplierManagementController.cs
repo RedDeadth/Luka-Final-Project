@@ -10,6 +10,7 @@ namespace FinalProject.API.Controllers;
 public class SupplierManagementController : ControllerBase
 {
     private readonly ISupplierManagementService _supplierService;
+    private const int MaxPageSize = 100;
 
     public SupplierManagementController(ISupplierManagementService supplierService)
     {
@@ -31,10 +32,28 @@ public class SupplierManagementController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllSuppliers()
+    public async Task<IActionResult> GetAllSuppliers([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var suppliers = await _supplierService.GetAllSuppliers().ToListAsync();
-        return Ok(new { success = true, data = suppliers });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _supplierService.GetAllSuppliers();
+        var totalCount = await query.CountAsync();
+        var suppliers = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = suppliers,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 
     [HttpGet("{id}")]

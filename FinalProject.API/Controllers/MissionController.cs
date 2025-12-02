@@ -10,6 +10,7 @@ namespace FinalProject.API.Controllers;
 public class MissionController : ControllerBase
 {
     private readonly IMissionService _missionService;
+    private const int MaxPageSize = 100;
 
     public MissionController(IMissionService missionService)
     {
@@ -37,23 +38,77 @@ public class MissionController : ControllerBase
     }
 
     [HttpGet("user/{userId}")]
-    public async Task<IActionResult> GetUserMissions(int userId)
+    public async Task<IActionResult> GetUserMissions(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var missions = await _missionService.GetUserMissions(userId).ToListAsync();
-        return Ok(new { success = true, data = missions });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _missionService.GetUserMissions(userId);
+        var totalCount = await query.CountAsync();
+        var missions = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = missions,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 
     [HttpGet("user/{userId}/pending")]
-    public async Task<IActionResult> GetPendingMissions(int userId)
+    public async Task<IActionResult> GetPendingMissions(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var missions = await _missionService.GetPendingMissions(userId).ToListAsync();
-        return Ok(new { success = true, data = missions });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _missionService.GetPendingMissions(userId);
+        var totalCount = await query.CountAsync();
+        var missions = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = missions,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 
     [HttpGet("user/{userId}/completed")]
-    public async Task<IActionResult> GetCompletedMissions(int userId)
+    public async Task<IActionResult> GetCompletedMissions(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var missions = await _missionService.GetCompletedMissions(userId).ToListAsync();
-        return Ok(new { success = true, data = missions });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _missionService.GetCompletedMissions(userId);
+        var totalCount = await query.CountAsync();
+        var missions = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = missions,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 }

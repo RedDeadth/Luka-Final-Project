@@ -10,6 +10,7 @@ namespace FinalProject.API.Controllers;
 public class CampaignController : ControllerBase
 {
     private readonly ICampaignService _campaignService;
+    private const int MaxPageSize = 100;
 
     public CampaignController(ICampaignService campaignService)
     {
@@ -31,10 +32,28 @@ public class CampaignController : ControllerBase
     }
 
     [HttpGet("active")]
-    public async Task<IActionResult> GetActiveCampaigns()
+    public async Task<IActionResult> GetActiveCampaigns([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var campaigns = await _campaignService.GetActiveCampaigns().ToListAsync();
-        return Ok(new { success = true, data = campaigns });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _campaignService.GetActiveCampaigns();
+        var totalCount = await query.CountAsync();
+        var campaigns = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = campaigns,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 
     [HttpGet("{id}")]
@@ -62,9 +81,27 @@ public class CampaignController : ControllerBase
     }
 
     [HttpGet("company/{companyUserId}")]
-    public async Task<IActionResult> GetCompanyCampaigns(int companyUserId)
+    public async Task<IActionResult> GetCompanyCampaigns(int companyUserId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var campaigns = await _campaignService.GetCompanyCampaigns(companyUserId).ToListAsync();
-        return Ok(new { success = true, data = campaigns });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _campaignService.GetCompanyCampaigns(companyUserId);
+        var totalCount = await query.CountAsync();
+        var campaigns = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = campaigns,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 }

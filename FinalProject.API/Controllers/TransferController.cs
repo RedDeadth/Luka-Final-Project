@@ -10,6 +10,7 @@ namespace FinalProject.API.Controllers;
 public class TransferController : ControllerBase
 {
     private readonly ITransferService _transferService;
+    private const int MaxPageSize = 100;
 
     public TransferController(ITransferService transferService)
     {
@@ -31,10 +32,28 @@ public class TransferController : ControllerBase
     }
 
     [HttpGet("account/{accountId}")]
-    public async Task<IActionResult> GetTransfersByAccount(int accountId)
+    public async Task<IActionResult> GetTransfersByAccount(int accountId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var transfers = await _transferService.GetTransfersByAccount(accountId).ToListAsync();
-        return Ok(new { success = true, data = transfers });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _transferService.GetTransfersByAccount(accountId);
+        var totalCount = await query.CountAsync();
+        var transfers = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = transfers,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 
     [HttpGet("{id}")]

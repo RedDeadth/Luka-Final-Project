@@ -10,6 +10,7 @@ namespace FinalProject.API.Controllers;
 public class StudentController : ControllerBase
 {
     private readonly IStudentService _studentService;
+    private const int MaxPageSize = 100;
 
     public StudentController(IStudentService studentService)
     {
@@ -17,10 +18,28 @@ public class StudentController : ControllerBase
     }
 
     [HttpGet("{studentId}/campaigns")]
-    public async Task<IActionResult> GetAvailableCampaigns(int studentId)
+    public async Task<IActionResult> GetAvailableCampaigns(int studentId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var campaigns = await _studentService.GetAvailableCampaigns(studentId).ToListAsync();
-        return Ok(new { success = true, data = campaigns });
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+        page = Math.Max(1, page);
+        
+        var query = _studentService.GetAvailableCampaigns(studentId);
+        var totalCount = await query.CountAsync();
+        var campaigns = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = campaigns,
+            pagination = new {
+                page,
+                pageSize,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            }
+        });
     }
 
     [HttpGet("{studentId}/balance")]
