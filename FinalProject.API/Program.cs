@@ -1,5 +1,6 @@
 using FinalProject.API.Extensions;
 using FinalProject.API.Middlewares;
+using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://localhost:5140");
@@ -22,6 +23,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddHangfireServices(builder.Configuration);
                                                                                                                                                                                                                                                                                         
 var app = builder.Build();
 
@@ -43,6 +45,19 @@ app.UseMiddleware<LoggingMiddleware>();
 // app.UseHttpsRedirection(); // Disabled for local testing
 
 app.UseMiddleware<JwtAuthMiddleware>();
+
+// Configurar Hangfire Dashboard (opcional - solo en desarrollo)
+if (app.Environment.IsDevelopment())
+{
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        DashboardTitle = "Lukitas - Hangfire Dashboard",
+        Authorization = new[] { new HangfireAuthorizationFilter() }
+    });
+}
+
+// Configurar Jobs Recurrentes
+HangfireJobsConfiguration.ConfigureRecurringJobs();
 
 app.MapControllers();
 app.MapGet("/", () => "API is running");
