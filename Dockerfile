@@ -2,15 +2,14 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /source
 
-# Copy solution and project files
-COPY *.sln .
+# Copy project files
 COPY FinalProject.API/*.csproj ./FinalProject.API/
 COPY FinalProject.Application/*.csproj ./FinalProject.Application/
 COPY FinalProject.Domain/*.csproj ./FinalProject.Domain/
 COPY FinalProject.Infrastructure/*.csproj ./FinalProject.Infrastructure/
 
-# Restore dependencies
-RUN dotnet restore
+# Restore dependencies for the main project (this will restore all dependencies)
+RUN dotnet restore FinalProject.API/FinalProject.API.csproj
 
 # Copy everything else
 COPY . .
