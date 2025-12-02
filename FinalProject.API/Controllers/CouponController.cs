@@ -1,6 +1,7 @@
 using FinalProject.Application.DTOs.CouponDtos;
 using FinalProject.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinalProject.API.Controllers;
 
@@ -46,14 +47,14 @@ public class CouponController : ControllerBase
     [HttpGet("campaign/{campaignId}")]
     public async Task<IActionResult> GetCouponsByCampaign(int campaignId)
     {
-        var coupons = await _couponService.GetCouponsByCampaignAsync(campaignId);
+        var coupons = await _couponService.GetCouponsByCampaign(campaignId).ToListAsync();
         return Ok(new { success = true, data = coupons });
     }
 
     [HttpGet("supplier/{supplierId}")]
     public async Task<IActionResult> GetCouponsBySupplier(int supplierId)
     {
-        var coupons = await _couponService.GetCouponsBySupplierAsync(supplierId);
+        var coupons = await _couponService.GetCouponsBySupplier(supplierId).ToListAsync();
         return Ok(new { success = true, data = coupons });
     }
 

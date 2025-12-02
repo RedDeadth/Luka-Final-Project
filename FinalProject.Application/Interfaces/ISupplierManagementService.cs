@@ -6,7 +6,7 @@ public interface ISupplierManagementService
 {
     Task<SupplierResponseDto> CreateSupplierAsync(CreateSupplierDto dto);
     Task<SupplierResponseDto> GetSupplierByIdAsync(int id);
-    Task<List<SupplierResponseDto>> GetAllSuppliersAsync();
+    IQueryable<SupplierResponseDto> GetAllSuppliers();
     Task<bool> UpdateSupplierAsync(int id, CreateSupplierDto dto);
     Task<bool> DeleteSupplierAsync(int id);
 }

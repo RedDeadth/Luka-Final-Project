@@ -1,6 +1,7 @@
 using FinalProject.Application.DTOs.SupplierDtos;
 using FinalProject.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinalProject.API.Controllers;
 
@@ -32,7 +33,7 @@ public class SupplierManagementController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllSuppliers()
     {
-        var suppliers = await _supplierService.GetAllSuppliersAsync();
+        var suppliers = await _supplierService.GetAllSuppliers().ToListAsync();
         return Ok(new { success = true, data = suppliers });
     }
 

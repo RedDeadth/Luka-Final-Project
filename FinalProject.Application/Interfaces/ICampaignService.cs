@@ -5,8 +5,8 @@ namespace FinalProject.Application.Interfaces;
 public interface ICampaignService
 {
     Task<CampaignResponseDto> CreateCampaignAsync(int companyUserId, CreateCampaignDto dto);
-    Task<List<CampaignResponseDto>> GetActiveCampaignsAsync();
+    IQueryable<CampaignResponseDto> GetActiveCampaigns();
     Task<CampaignResponseDto> GetCampaignByIdAsync(int campaignId);
     Task<bool> EnrollStudentAsync(EnrollCampaignDto dto);
-    Task<List<CampaignResponseDto>> GetCompanyCampaignsAsync(int companyUserId);
+    IQueryable<CampaignResponseDto> GetCompanyCampaigns(int companyUserId);
 }

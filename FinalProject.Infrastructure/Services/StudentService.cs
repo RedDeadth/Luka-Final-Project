@@ -15,14 +15,15 @@ public class StudentService : IStudentService
         _context = context;
     }
 
-    public async Task<List<CampaignResponseDto>> GetAvailableCampaignsAsync(int studentId)
+    public IQueryable<CampaignResponseDto> GetAvailableCampaigns(int studentId)
     {
-        var enrolledCampaignIds = await _context.Accounts
+        // Subconsulta para obtener IDs de campañas inscritas
+        var enrolledCampaignIds = _context.Accounts
             .Where(a => a.UserId == studentId)
-            .Select(a => a.CampaignId)
-            .ToListAsync();
+            .Select(a => a.CampaignId);
 
-        return await _context.Campaigns
+        // Retorna IQueryable para que el filtrado se haga en BD
+        return _context.Campaigns
             .Where(c => c.Active == true && 
                        c.EndDate >= DateOnly.FromDateTime(DateTime.Now) &&
                        !enrolledCampaignIds.Contains(c.Id))
@@ -44,8 +45,7 @@ public class StudentService : IStudentService
                 Active = c.Active ?? true,
                 EnrolledStudents = c.Accounts.Count,
                 CompanyName = c.User!.Company
-            })
-            .ToListAsync();
+            });
     }
 
     public async Task<decimal> GetLukasBalanceAsync(int studentId)

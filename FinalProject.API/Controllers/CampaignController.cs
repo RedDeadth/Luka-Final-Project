@@ -1,6 +1,7 @@
 using FinalProject.Application.DTOs.CampaignDtos;
 using FinalProject.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinalProject.API.Controllers;
 
@@ -32,7 +33,7 @@ public class CampaignController : ControllerBase
     [HttpGet("active")]
     public async Task<IActionResult> GetActiveCampaigns()
     {
-        var campaigns = await _campaignService.GetActiveCampaignsAsync();
+        var campaigns = await _campaignService.GetActiveCampaigns().ToListAsync();
         return Ok(new { success = true, data = campaigns });
     }
 
@@ -63,7 +64,7 @@ public class CampaignController : ControllerBase
     [HttpGet("company/{companyUserId}")]
     public async Task<IActionResult> GetCompanyCampaigns(int companyUserId)
     {
-        var campaigns = await _campaignService.GetCompanyCampaignsAsync(companyUserId);
+        var campaigns = await _campaignService.GetCompanyCampaigns(companyUserId).ToListAsync();
         return Ok(new { success = true, data = campaigns });
     }
 }

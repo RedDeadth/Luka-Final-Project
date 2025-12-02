@@ -6,7 +6,7 @@ namespace FinalProject.Application.Interfaces;
 
 public interface IAdminService
 {
-    Task<List<CompanyProfileDto>> GetPendingCompaniesAsync();
+    IQueryable<CompanyProfileDto> GetPendingCompanies();
     Task<bool> ApproveCompanyAsync(CompanyApprovalDto dto);
     Task<SystemStatisticsDto> GetSystemStatisticsAsync();
     Task<bool> EmitLukasAsync(EmitLukasDto dto);

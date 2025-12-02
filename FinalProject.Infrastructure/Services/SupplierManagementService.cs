@@ -53,9 +53,9 @@ public class SupplierManagementService : ISupplierManagementService
         };
     }
 
-    public async Task<List<SupplierResponseDto>> GetAllSuppliersAsync()
+    public IQueryable<SupplierResponseDto> GetAllSuppliers()
     {
-        return await _context.Suppliers
+        return _context.Suppliers
             .Include(s => s.SupplierType)
             .Include(s => s.Products)
             .Where(s => s.Status == "active")
@@ -69,8 +69,7 @@ public class SupplierManagementService : ISupplierManagementService
                 Phone = s.Phone,
                 Status = s.Status ?? "active",
                 TotalProducts = s.Products.Count
-            })
-            .ToListAsync();
+            });
     }
 
     public async Task<bool> UpdateSupplierAsync(int id, CreateSupplierDto dto)

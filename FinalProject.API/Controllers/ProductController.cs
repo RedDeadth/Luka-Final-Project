@@ -1,6 +1,7 @@
 using FinalProject.Application.DTOs.ProductDtos;
 using FinalProject.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinalProject.API.Controllers;
 
@@ -32,7 +33,7 @@ public class ProductController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllProducts()
     {
-        var products = await _productService.GetAllProductsAsync();
+        var products = await _productService.GetAllProducts().ToListAsync();
         return Ok(new { success = true, data = products });
     }
 
@@ -53,7 +54,7 @@ public class ProductController : ControllerBase
     [HttpGet("supplier/{supplierId}")]
     public async Task<IActionResult> GetProductsBySupplier(int supplierId)
     {
-        var products = await _productService.GetProductsBySupplierAsync(supplierId);
+        var products = await _productService.GetProductsBySupplier(supplierId).ToListAsync();
         return Ok(new { success = true, data = products });
     }
 

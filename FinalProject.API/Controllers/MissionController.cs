@@ -1,6 +1,7 @@
 using FinalProject.Application.DTOs.MissionDtos;
 using FinalProject.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinalProject.API.Controllers;
 
@@ -38,21 +39,21 @@ public class MissionController : ControllerBase
     [HttpGet("user/{userId}")]
     public async Task<IActionResult> GetUserMissions(int userId)
     {
-        var missions = await _missionService.GetUserMissionsAsync(userId);
+        var missions = await _missionService.GetUserMissions(userId).ToListAsync();
         return Ok(new { success = true, data = missions });
     }
 
     [HttpGet("user/{userId}/pending")]
     public async Task<IActionResult> GetPendingMissions(int userId)
     {
-        var missions = await _missionService.GetPendingMissionsAsync(userId);
+        var missions = await _missionService.GetPendingMissions(userId).ToListAsync();
         return Ok(new { success = true, data = missions });
     }
 
     [HttpGet("user/{userId}/completed")]
     public async Task<IActionResult> GetCompletedMissions(int userId)
     {
-        var missions = await _missionService.GetCompletedMissionsAsync(userId);
+        var missions = await _missionService.GetCompletedMissions(userId).ToListAsync();
         return Ok(new { success = true, data = missions });
     }
 }

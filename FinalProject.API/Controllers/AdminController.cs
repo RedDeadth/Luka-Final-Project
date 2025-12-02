@@ -2,6 +2,7 @@ using FinalProject.Application.DTOs.CompanyDtos;
 using FinalProject.Application.DTOs.LukasDtos;
 using FinalProject.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinalProject.API.Controllers;
 
@@ -19,7 +20,7 @@ public class AdminController : ControllerBase
     [HttpGet("companies/pending")]
     public async Task<IActionResult> GetPendingCompanies()
     {
-        var companies = await _adminService.GetPendingCompaniesAsync();
+        var companies = await _adminService.GetPendingCompanies().ToListAsync();
         return Ok(new { success = true, data = companies });
     }
 

@@ -57,9 +57,9 @@ public class CouponService : ICouponService
         };
     }
 
-    public async Task<List<CouponResponseDto>> GetCouponsByCampaignAsync(int campaignId)
+    public IQueryable<CouponResponseDto> GetCouponsByCampaign(int campaignId)
     {
-        return await _context.Coupons
+        return _context.Coupons
             .Include(c => c.Campaign)
             .Include(c => c.Supplier)
             .Where(c => c.CampaignId == campaignId && c.Active == true)
@@ -75,13 +75,12 @@ public class CouponService : ICouponService
                 DiscountValue = c.DiscountValue,
                 ExpirationDate = c.ExpirationDate,
                 Active = c.Active ?? false
-            })
-            .ToListAsync();
+            });
     }
 
-    public async Task<List<CouponResponseDto>> GetCouponsBySupplierAsync(int supplierId)
+    public IQueryable<CouponResponseDto> GetCouponsBySupplier(int supplierId)
     {
-        return await _context.Coupons
+        return _context.Coupons
             .Include(c => c.Campaign)
             .Include(c => c.Supplier)
             .Where(c => c.SupplierId == supplierId && c.Active == true)
@@ -97,8 +96,7 @@ public class CouponService : ICouponService
                 DiscountValue = c.DiscountValue,
                 ExpirationDate = c.ExpirationDate,
                 Active = c.Active ?? false
-            })
-            .ToListAsync();
+            });
     }
 
     public async Task<bool> ValidateCouponAsync(string code)

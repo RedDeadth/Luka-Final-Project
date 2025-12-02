@@ -60,9 +60,9 @@ public class MissionService : IMissionService
         return true;
     }
 
-    public async Task<List<UserMissionResponseDto>> GetUserMissionsAsync(int userId)
+    public IQueryable<UserMissionResponseDto> GetUserMissions(int userId)
     {
-        return await _context.UserMissions
+        return _context.UserMissions
             .Include(um => um.User)
             .Include(um => um.Mission)
             .Where(um => um.UserId == userId)
@@ -78,13 +78,12 @@ public class MissionService : IMissionService
                 Completed = um.Completed ?? false,
                 AssignmentDate = um.AssignmentDate,
                 CompletionDate = um.CompletionDate
-            })
-            .ToListAsync();
+            });
     }
 
-    public async Task<List<UserMissionResponseDto>> GetPendingMissionsAsync(int userId)
+    public IQueryable<UserMissionResponseDto> GetPendingMissions(int userId)
     {
-        return await _context.UserMissions
+        return _context.UserMissions
             .Include(um => um.User)
             .Include(um => um.Mission)
             .Where(um => um.UserId == userId && um.Completed == false)
@@ -100,13 +99,12 @@ public class MissionService : IMissionService
                 Completed = um.Completed ?? false,
                 AssignmentDate = um.AssignmentDate,
                 CompletionDate = um.CompletionDate
-            })
-            .ToListAsync();
+            });
     }
 
-    public async Task<List<UserMissionResponseDto>> GetCompletedMissionsAsync(int userId)
+    public IQueryable<UserMissionResponseDto> GetCompletedMissions(int userId)
     {
-        return await _context.UserMissions
+        return _context.UserMissions
             .Include(um => um.User)
             .Include(um => um.Mission)
             .Where(um => um.UserId == userId && um.Completed == true)
@@ -122,7 +120,6 @@ public class MissionService : IMissionService
                 Completed = um.Completed ?? false,
                 AssignmentDate = um.AssignmentDate,
                 CompletionDate = um.CompletionDate
-            })
-            .ToListAsync();
+            });
     }
 }

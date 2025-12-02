@@ -5,7 +5,7 @@ namespace FinalProject.Application.Interfaces;
 
 public interface IStudentService
 {
-    Task<List<CampaignResponseDto>> GetAvailableCampaignsAsync(int studentId);
+    IQueryable<CampaignResponseDto> GetAvailableCampaigns(int studentId);
     Task<decimal> GetLukasBalanceAsync(int studentId);
     Task<bool> PurchaseProductsAsync(ProductPurchaseDto dto);
 }

@@ -53,9 +53,9 @@ public class TransferService : ITransferService
         }
     }
 
-    public async Task<List<TransferResponseDto>> GetTransfersByAccountAsync(int accountId)
+    public IQueryable<TransferResponseDto> GetTransfersByAccount(int accountId)
     {
-        return await _context.Transfers
+        return _context.Transfers
             .Include(t => t.SourceAccount)
             .Include(t => t.DestinationAccount)
             .Where(t => t.SourceAccountId == accountId || t.DestinationAccountId == accountId)
@@ -69,8 +69,7 @@ public class TransferService : ITransferService
                 TransferDate = t.TransferDate,
                 Amount = t.Amount,
                 Status = t.Status ?? "pending"
-            })
-            .ToListAsync();
+            });
     }
 
     public async Task<TransferResponseDto> GetTransferByIdAsync(int id)

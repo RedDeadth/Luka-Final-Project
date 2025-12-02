@@ -39,9 +39,9 @@ public class CampaignService : ICampaignService
         return await GetCampaignByIdAsync(campaign.Id);
     }
 
-    public async Task<List<CampaignResponseDto>> GetActiveCampaignsAsync()
+    public IQueryable<CampaignResponseDto> GetActiveCampaigns()
     {
-        return await _context.Campaigns
+        return _context.Campaigns
             .Where(c => c.Active == true && c.EndDate >= DateOnly.FromDateTime(DateTime.Now))
             .Include(c => c.User)
             .Include(c => c.Accounts)
@@ -61,8 +61,7 @@ public class CampaignService : ICampaignService
                 Active = c.Active ?? true,
                 EnrolledStudents = c.Accounts.Count,
                 CompanyName = c.User!.Company
-            })
-            .ToListAsync();
+            });
     }
 
     public async Task<CampaignResponseDto> GetCampaignByIdAsync(int campaignId)
@@ -120,9 +119,9 @@ public class CampaignService : ICampaignService
         return true;
     }
 
-    public async Task<List<CampaignResponseDto>> GetCompanyCampaignsAsync(int companyUserId)
+    public IQueryable<CampaignResponseDto> GetCompanyCampaigns(int companyUserId)
     {
-        return await _context.Campaigns
+        return _context.Campaigns
             .Where(c => c.UserId == companyUserId)
             .Include(c => c.User)
             .Include(c => c.Accounts)
@@ -142,7 +141,6 @@ public class CampaignService : ICampaignService
                 Active = c.Active ?? true,
                 EnrolledStudents = c.Accounts.Count,
                 CompanyName = c.User!.Company
-            })
-            .ToListAsync();
+            });
     }
 }

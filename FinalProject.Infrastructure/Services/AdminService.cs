@@ -17,9 +17,9 @@ public class AdminService : IAdminService
         _context = context;
     }
 
-    public async Task<List<CompanyProfileDto>> GetPendingCompaniesAsync()
+    public IQueryable<CompanyProfileDto> GetPendingCompanies()
     {
-        var companies = await _context.Users
+        return _context.Users
             .Where(u => u.RoleId == 2 && u.Active == false)
             .Select(u => new CompanyProfileDto
             {
@@ -31,10 +31,7 @@ public class AdminService : IAdminService
                 Approved = u.Active ?? false,
                 LukasBalance = u.Accounts.Where(a => a.Status == "active").Sum(a => a.Balance ?? 0),
                 ActiveCampaigns = u.Campaigns.Count(c => c.Active == true)
-            })
-            .ToListAsync();
-
-        return companies;
+            });
     }
 
     public async Task<bool> ApproveCompanyAsync(CompanyApprovalDto dto)

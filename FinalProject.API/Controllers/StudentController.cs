@@ -1,6 +1,7 @@
 using FinalProject.Application.DTOs.ProductDtos;
 using FinalProject.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinalProject.API.Controllers;
 
@@ -18,7 +19,7 @@ public class StudentController : ControllerBase
     [HttpGet("{studentId}/campaigns")]
     public async Task<IActionResult> GetAvailableCampaigns(int studentId)
     {
-        var campaigns = await _studentService.GetAvailableCampaignsAsync(studentId);
+        var campaigns = await _studentService.GetAvailableCampaigns(studentId).ToListAsync();
         return Ok(new { success = true, data = campaigns });
     }
 

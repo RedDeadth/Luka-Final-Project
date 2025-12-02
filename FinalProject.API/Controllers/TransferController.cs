@@ -1,6 +1,7 @@
 using FinalProject.Application.DTOs.TransferDtos;
 using FinalProject.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinalProject.API.Controllers;
 
@@ -32,7 +33,7 @@ public class TransferController : ControllerBase
     [HttpGet("account/{accountId}")]
     public async Task<IActionResult> GetTransfersByAccount(int accountId)
     {
-        var transfers = await _transferService.GetTransfersByAccountAsync(accountId);
+        var transfers = await _transferService.GetTransfersByAccount(accountId).ToListAsync();
         return Ok(new { success = true, data = transfers });
     }
 

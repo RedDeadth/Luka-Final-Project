@@ -6,8 +6,8 @@ public interface ICouponService
 {
     Task<CouponResponseDto> CreateCouponAsync(CreateCouponDto dto);
     Task<CouponResponseDto> GetCouponByCodeAsync(string code);
-    Task<List<CouponResponseDto>> GetCouponsByCampaignAsync(int campaignId);
-    Task<List<CouponResponseDto>> GetCouponsBySupplierAsync(int supplierId);
+    IQueryable<CouponResponseDto> GetCouponsByCampaign(int campaignId);
+    IQueryable<CouponResponseDto> GetCouponsBySupplier(int supplierId);
     Task<bool> ValidateCouponAsync(string code);
     Task<bool> DeactivateCouponAsync(int id);
 }

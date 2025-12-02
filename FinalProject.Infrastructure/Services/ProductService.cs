@@ -57,9 +57,9 @@ public class ProductService : IProductService
         };
     }
 
-    public async Task<List<ProductResponseDto>> GetAllProductsAsync()
+    public IQueryable<ProductResponseDto> GetAllProducts()
     {
-        return await _context.Products
+        return _context.Products
             .Include(p => p.Supplier)
             .Include(p => p.ProductType)
             .Where(p => p.Status == "active")
@@ -75,13 +75,12 @@ public class ProductService : IProductService
                 Price = p.Price,
                 Stock = p.Stock ?? 0,
                 Status = p.Status ?? "active"
-            })
-            .ToListAsync();
+            });
     }
 
-    public async Task<List<ProductResponseDto>> GetProductsBySupplierAsync(int supplierId)
+    public IQueryable<ProductResponseDto> GetProductsBySupplier(int supplierId)
     {
-        return await _context.Products
+        return _context.Products
             .Include(p => p.Supplier)
             .Include(p => p.ProductType)
             .Where(p => p.SupplierId == supplierId && p.Status == "active")
@@ -97,8 +96,7 @@ public class ProductService : IProductService
                 Price = p.Price,
                 Stock = p.Stock ?? 0,
                 Status = p.Status ?? "active"
-            })
-            .ToListAsync();
+            });
     }
 
     public async Task<bool> UpdateProductAsync(int id, UpdateProductDto dto)
