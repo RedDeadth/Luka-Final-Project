@@ -10,7 +10,7 @@
 
 ---
 
-## 🏗️ Estructura de Capas
+## 🏗️ Estructura de Capas (Clean Architecture Pragmática)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -19,20 +19,30 @@
 └────────────────────┬────────────────────────────────────┘
                      ↓
 ┌─────────────────────────────────────────────────────────┐
-│              Infrastructure Layer                        │
-│  Services → Implementaciones de lógica de negocio        │
+│              Application Layer                           │
+│  ✓ Interfaces → Contratos de servicios                  │
+│  ✓ DTOs → Transferencia de datos                        │
 └────────────────────┬────────────────────────────────────┘
                      ↓
 ┌─────────────────────────────────────────────────────────┐
-│              Application Layer                           │
-│  Interfaces + DTOs → Contratos y transferencia de datos │
+│              Infrastructure Layer                        │
+│  ✓ Services → Implementaciones de lógica de negocio     │
+│  ✓ Repositories → Acceso a datos (opcional)             │
+│  ✓ DbContext → Entity Framework Core                    │
 └────────────────────┬────────────────────────────────────┘
                      ↓
 ┌─────────────────────────────────────────────────────────┐
 │                Domain Layer                              │
-│  Entities → Modelos de dominio puros                     │
+│  ✓ Entities → Modelos de dominio puros                  │
+│  ✓ Interfaces → Contratos de repositorios               │
 └─────────────────────────────────────────────────────────┘
 ```
+
+**Implementación Pragmática**: 
+- Los **Services** están en Infrastructure y usan DbContext directamente
+- No se usan Use Cases puros para evitar sobre-ingeniería
+- Entity Framework Core ya proporciona abstracción de datos suficiente
+- Esta arquitectura es más simple y adecuada para proyectos medianos
 
 ---
 
@@ -356,15 +366,53 @@ CreateCouponDto → Coupon (Entity)
 
 ## 🎯 Patrones Implementados
 
-### 1. Repository Pattern
+### 1. Service Layer Pattern
+**Ubicación**: `FinalProject.Infrastructure/Services/`
+
+Servicios que encapsulan lógica de negocio:
+- `AuthService` - Autenticación y autorización
+- `CampaignService` - Operaciones de campañas
+- `StudentService` - Operaciones de estudiantes
+- `AdminService` - Operaciones administrativas
+- `ProductService` - Gestión de productos
+- `SupplierService` - Operaciones de proveedores
+- `MissionService` - Gestión de misiones
+- `CouponService` - Gestión de cupones
+- `TransferService` - Transferencias de Lukas
+
+**Características**:
+- Implementan interfaces definidas en Application
+- Encapsulan lógica de negocio compleja
+- Usan Entity Framework Core directamente
+- Manejan transacciones y validaciones
+
+**Ejemplo de uso**:
+```csharp
+// En el Controller
+public class CampaignController : ControllerBase
+{
+    private readonly ICampaignService _campaignService;
+    
+    public CampaignController(ICampaignService campaignService)
+    {
+        _campaignService = campaignService;
+    }
+    
+    [HttpPost("create")]
+    public async Task<IActionResult> CreateCampaign(CreateCampaignDto dto)
+    {
+        var result = await _campaignService.CreateCampaignAsync(userId, dto);
+        return Ok(result);
+    }
+}
+```
+
+### 2. Repository Pattern
 - `IGenericRepository<T>` en Domain
 - `GenericRepository<T>` en Infrastructure
 - `IUnitOfWork` para transacciones
 
-### 2. Service Layer Pattern
-- Interfaces en Application
-- Implementaciones en Infrastructure
-- Lógica de negocio encapsulada
+**Nota**: Los Services usan DbContext directamente en lugar de repositorios para simplicidad.
 
 ### 3. DTO Pattern
 - Separación entre entidades y DTOs
@@ -373,8 +421,58 @@ CreateCouponDto → Coupon (Entity)
 
 ### 4. Dependency Injection
 - Configurado en `ServiceCollectionExtensions.cs`
-- Lifetime: Scoped para servicios
+- Lifetime: Scoped para servicios y Use Cases
 - Interfaces → Implementaciones
+
+---
+
+## 🤔 Arquitectura de Servicios (Service Layer Pattern)
+
+### ¿Por qué Services en lugar de Use Cases puros?
+
+En Clean Architecture pura, los **Use Cases** deberían estar en Application y usar **Repositorios** 
+para acceder a datos. Sin embargo, este proyecto usa **Services** en Infrastructure por razones prácticas:
+
+**Ventajas de la implementación actual**:
+1. ✓ **Simplicidad**: Entity Framework Core ya proporciona abstracción de datos
+2. ✓ **Menos código**: No necesitamos crear repositorios para cada entidad
+3. ✓ **Pragmatismo**: Para proyectos medianos, Services son suficientes
+4. ✓ **Mantenibilidad**: Menos capas = más fácil de mantener
+
+### Services en Infrastructure
+
+**Ubicación**: `FinalProject.Infrastructure/Services/`
+
+Cada servicio encapsula la lógica de negocio de un dominio:
+- `CampaignService` - Operaciones de campañas
+- `StudentService` - Operaciones de estudiantes  
+- `AdminService` - Operaciones administrativas
+- `ProductService` - Operaciones de productos
+- `MissionService` - Operaciones de misiones
+- `CouponService` - Operaciones de cupones
+- `TransferService` - Operaciones de transferencias
+
+**Características**:
+- Implementan interfaces definidas en Application
+- Usan DbContext directamente (EF Core)
+- Encapsulan lógica de negocio
+- Manejan transacciones
+- Validan reglas de negocio
+
+### ¿Cuándo migrar a Use Cases puros?
+
+Considera usar Use Cases puros cuando:
+- El proyecto crece significativamente
+- Necesitas cambiar de ORM
+- Requieres alta testabilidad con mocks
+- Múltiples equipos trabajan en paralelo
+- Necesitas reutilizar lógica en diferentes contextos
+
+**Para implementar Use Cases puros necesitarías**:
+1. Crear repositorios para cada entidad
+2. Mover Services a Application como Use Cases
+3. Hacer que Use Cases dependan de repositorios, no de DbContext
+4. Implementar repositorios en Infrastructure
 
 ---
 
@@ -386,7 +484,7 @@ CreateCouponDto → Coupon (Entity)
 2. **Agregar método a Interface** en `FinalProject.Application/Interfaces/I[Nombre]Service.cs`
 3. **Implementar en Service** en `FinalProject.Infrastructure/Services/[Nombre]Service.cs`
 4. **Agregar endpoint en Controller** en `FinalProject.API/Controllers/[Nombre]Controller.cs`
-5. **Registrar servicio** en `FinalProject.API/Extensions/ServiceCollectionExtensions.cs`
+5. **Registrar servicio** en `FinalProject.API/Extensions/ServiceCollectionExtensions.cs` (si es nuevo)
 
 ### Para modificar lógica de negocio:
 
