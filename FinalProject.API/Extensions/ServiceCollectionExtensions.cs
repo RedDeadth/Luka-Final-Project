@@ -43,10 +43,17 @@ public static class ServiceCollectionExtensions
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         var serverVersion = new MySqlServerVersion(new Version(9, 2, 0));
         services.AddDbContext<LukitasDbContext>(options =>
-            options.UseMySql(connectionString, serverVersion));
+            options.UseMySql(connectionString, serverVersion, mySqlOptions =>
+            {
+                mySqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorNumbersToAdd: null);
+            }));
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+        services.AddScoped<ReportService>();
 
         return services;
     }
