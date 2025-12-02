@@ -40,7 +40,15 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        // Obtener connection string (prioridad a variable de entorno DATABASE_URL de Render)
+        var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+                            ?? configuration.GetConnectionString("DefaultConnection");
+
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            throw new InvalidOperationException("Database connection string not configured");
+        }
+
         var serverVersion = new MySqlServerVersion(new Version(9, 2, 0));
         services.AddDbContext<LukitasDbContext>(options =>
             options.UseMySql(connectionString, serverVersion));
@@ -53,7 +61,9 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddHangfireServices(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        // Obtener connection string (prioridad a variable de entorno)
+        var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+                            ?? configuration.GetConnectionString("DefaultConnection");
 
         // Configurar Hangfire con MySQL Storage
         services.AddHangfire(config => config

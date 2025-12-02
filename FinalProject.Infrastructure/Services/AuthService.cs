@@ -56,16 +56,25 @@ public class AuthService : IAuthService
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "");
+            var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY")
+                      ?? _configuration["Jwt:Key"]
+                      ?? throw new InvalidOperationException("JWT Key not configured");
+
+            var key = Encoding.UTF8.GetBytes(jwtKey);
+
+            var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
+                         ?? _configuration["Jwt:Issuer"];
+            var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+                           ?? _configuration["Jwt:Audience"];
 
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
                 ValidateIssuer = true,
-                ValidIssuer = _configuration["Jwt:Issuer"],
+                ValidIssuer = jwtIssuer,
                 ValidateAudience = true,
-                ValidAudience = _configuration["Jwt:Audience"],
+                ValidAudience = jwtAudience,
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
             }, out _);
@@ -80,7 +89,11 @@ public class AuthService : IAuthService
 
     public string GenerateToken(int userId, string email, string role)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? ""));
+        var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY")
+                  ?? _configuration["Jwt:Key"]
+                  ?? throw new InvalidOperationException("JWT Key not configured");
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
@@ -91,9 +104,14 @@ public class AuthService : IAuthService
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
+        var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
+                     ?? _configuration["Jwt:Issuer"];
+        var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+                       ?? _configuration["Jwt:Audience"];
+
         var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
+            issuer: jwtIssuer,
+            audience: jwtAudience,
             claims: claims,
             expires: DateTime.UtcNow.AddHours(8),
             signingCredentials: credentials

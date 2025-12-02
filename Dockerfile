@@ -1,0 +1,37 @@
+# Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /source
+
+# Copy solution and project files
+COPY *.sln .
+COPY FinalProject.API/*.csproj ./FinalProject.API/
+COPY FinalProject.Application/*.csproj ./FinalProject.Application/
+COPY FinalProject.Domain/*.csproj ./FinalProject.Domain/
+COPY FinalProject.Infrastructure/*.csproj ./FinalProject.Infrastructure/
+
+# Restore dependencies
+RUN dotnet restore
+
+# Copy everything else
+COPY . .
+
+# Build and publish
+WORKDIR /source/FinalProject.API
+RUN dotnet publish -c Release -o /app/publish
+
+# Stage 2: Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
+
+# Copy published files
+COPY --from=build /app/publish .
+
+# Expose port (Render assigns dynamically, but we set default)
+EXPOSE 8080
+
+# Set environment to Production
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_URLS=http://+:8080
+
+# Run the application
+ENTRYPOINT ["dotnet", "FinalProject.API.dll"]

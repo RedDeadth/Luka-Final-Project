@@ -3,18 +3,35 @@ using FinalProject.API.Middlewares;
 using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://localhost:5140");
+
+// Configurar puerto dinámico para Render (o local 5140)
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5140";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 builder.Services.AddControllers();
 // builder.Services.AddOpenApi(); // removed in favor of Swashbuckle
 builder.Services.AddSwaggerGen();
 
-// CORS para React
+// CORS para React (Development y Production)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173")
+        var allowedOrigins = new List<string>
+        {
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173"
+        };
+
+        // Agregar frontend de producción si está configurado
+        var frontendUrl = builder.Configuration["FrontendUrl"];
+        if (!string.IsNullOrEmpty(frontendUrl))
+        {
+            allowedOrigins.Add(frontendUrl);
+        }
+
+        policy.WithOrigins(allowedOrigins.ToArray())
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();

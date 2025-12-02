@@ -1,0 +1,30 @@
+services:
+  # Web Service - API .NET
+  - type: web
+    name: lukitas-api
+    runtime: docker
+    plan: free
+    branch: main
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lukitas-mysql
+          property: connectionString
+      - key: JWT_KEY
+        generateValue: true
+      - key: JWT_ISSUER
+        value: FinalProjectAPI
+      - key: JWT_AUDIENCE
+        value: FinalProjectClient
+    healthCheckPath: /
+    autoDeploy: true
+
+databases:
+  # MySQL Database
+  - name: lukitas-mysql
+    databaseName: lukitas_db
+    user: lukitas_user
+    plan: free
