@@ -1,3 +1,4 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.Commands.User.ActivateUser;
 using FinalProject.Application.Commands.User.AssignRole;
 using FinalProject.Application.Commands.User.ChangeEmail;
@@ -46,7 +47,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
             if (role == null)
                 return Result<UserDto>.Failure("Invalid role specified");
 
-            var user = new Infrastructure.User
+            var user = new Domain.Entities.User
             {
                 FirstName = dto.FirstName,
                 LastName = dto.LastName,

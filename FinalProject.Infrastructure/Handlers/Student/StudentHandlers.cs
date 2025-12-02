@@ -1,3 +1,4 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.Common;
 using FinalProject.Application.DTOs.CampaignDtos;
 using FinalProject.Application.Features.Student;

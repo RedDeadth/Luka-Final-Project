@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace FinalProject.API.Middlewares
 {
     public class LoggingMiddleware
@@ -13,11 +15,35 @@ namespace FinalProject.API.Middlewares
 
         public async Task Invoke(HttpContext context)
         {
-            _logger.LogInformation("Request: {method} {url}", context.Request.Method, context.Request.Path);
+            var stopwatch = Stopwatch.StartNew();
+            var requestId = Guid.NewGuid().ToString("N")[..8];
 
-            await _next(context);
+            _logger.LogInformation(
+                "[{RequestId}] Request: {Method} {Path} from {IP}",
+                requestId,
+                context.Request.Method,
+                context.Request.Path,
+                context.Connection.RemoteIpAddress);
 
-            _logger.LogInformation("Response: {statusCode}", context.Response.StatusCode);
+            try
+            {
+                await _next(context);
+            }
+            finally
+            {
+                stopwatch.Stop();
+
+                var logLevel = context.Response.StatusCode >= 500 ? LogLevel.Error
+                    : context.Response.StatusCode >= 400 ? LogLevel.Warning
+                    : LogLevel.Information;
+
+                _logger.Log(
+                    logLevel,
+                    "[{RequestId}] Response: {StatusCode} in {ElapsedMs}ms",
+                    requestId,
+                    context.Response.StatusCode,
+                    stopwatch.ElapsedMilliseconds);
+            }
         }
     }
 }

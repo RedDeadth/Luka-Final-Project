@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
-namespace FinalProject.Infrastructure;
+namespace FinalProject.Domain.Entities;
 
 public partial class Transfer
 {

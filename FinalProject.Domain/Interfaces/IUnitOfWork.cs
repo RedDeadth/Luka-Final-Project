@@ -1,4 +1,4 @@
-using FinalProject.Infrastructure;
+using FinalProject.Domain.Entities;
 
 namespace FinalProject.Domain.Interfaces;
 
@@ -21,7 +21,14 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<Transfer> Transfers { get; }
     
     Task<int> SaveChangesAsync();
-    Task BeginTransactionAsync();
-    Task CommitTransactionAsync();
-    Task RollbackTransactionAsync();
+    
+    /// <summary>
+    /// Ejecuta una operación dentro de una transacción con soporte para reintentos.
+    /// </summary>
+    Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> operation);
+    
+    /// <summary>
+    /// Ejecuta una operación dentro de una transacción con soporte para reintentos.
+    /// </summary>
+    Task ExecuteInTransactionAsync(Func<Task> operation);
 }

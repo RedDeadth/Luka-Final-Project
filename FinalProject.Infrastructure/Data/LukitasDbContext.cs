@@ -1,4 +1,5 @@
-﻿using System;
+using FinalProject.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using FinalProject.Infrastructure;
 using Microsoft.EntityFrameworkCore;

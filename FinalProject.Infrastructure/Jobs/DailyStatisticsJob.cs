@@ -1,3 +1,4 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

@@ -1,21 +1,22 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.Interfaces;
+using FinalProject.Domain.Interfaces;
 using FinalProject.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace FinalProject.Infrastructure.Services;
 
 public class SupplierService : ISupplierService
 {
-    private readonly LukitasDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public SupplierService(LukitasDbContext context)
+    public SupplierService(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<decimal> GetLukasBalanceAsync(int supplierId)
     {
-        var supplierAccount = await _context.Accounts
+        var supplierAccount = await _unitOfWork.Accounts
             .FirstOrDefaultAsync(a => a.UserId == supplierId && a.Status == "active");
 
         return supplierAccount?.Balance ?? 0;
@@ -23,26 +24,29 @@ public class SupplierService : ISupplierService
 
     public async Task<bool> ConvertLukasToRealMoneyAsync(int supplierId, decimal amount)
     {
-        var supplierAccount = await _context.Accounts
-            .FirstOrDefaultAsync(a => a.UserId == supplierId && a.Status == "active");
-
-        if (supplierAccount == null || supplierAccount.Balance < amount)
-            return false;
-
-        supplierAccount.Balance -= amount;
-        
-        var transfer = new Transfer
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            SourceAccountId = supplierAccount.Id,
-            DestinationAccountId = null,
-            TransferDate = DateOnly.FromDateTime(DateTime.Now),
-            Amount = amount,
-            Status = "completed"
-        };
+            var supplierAccount = await _unitOfWork.Accounts
+                .FirstOrDefaultAsync(a => a.UserId == supplierId && a.Status == "active");
 
-        _context.Transfers.Add(transfer);
-        await _context.SaveChangesAsync();
+            if (supplierAccount == null || supplierAccount.Balance < amount)
+                return false;
 
-        return true;
+            supplierAccount.Balance -= amount;
+            _unitOfWork.Accounts.Update(supplierAccount);
+            
+            var transfer = new Transfer
+            {
+                SourceAccountId = supplierAccount.Id,
+                DestinationAccountId = null,
+                TransferDate = DateOnly.FromDateTime(DateTime.Now),
+                Amount = amount,
+                Status = "completed"
+            };
+
+            await _unitOfWork.Transfers.AddAsync(transfer);
+
+            return true;
+        });
     }
 }

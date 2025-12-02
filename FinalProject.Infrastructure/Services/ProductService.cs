@@ -1,5 +1,7 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.DTOs.ProductDtos;
 using FinalProject.Application.Interfaces;
+using FinalProject.Domain.Interfaces;
 using FinalProject.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,10 +9,12 @@ namespace FinalProject.Infrastructure.Services;
 
 public class ProductService : IProductService
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly LukitasDbContext _context;
 
-    public ProductService(LukitasDbContext context)
+    public ProductService(IUnitOfWork unitOfWork, LukitasDbContext context)
     {
+        _unitOfWork = unitOfWork;
         _context = context;
     }
 
@@ -27,28 +31,27 @@ public class ProductService : IProductService
             Status = "active"
         };
 
-        _context.Products.Add(product);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.Products.AddAsync(product);
+        await _unitOfWork.SaveChangesAsync();
 
         return await GetProductByIdAsync(product.Id);
     }
 
     public async Task<ProductResponseDto> GetProductByIdAsync(int id)
     {
-        var product = await _context.Products
-            .Include(p => p.Supplier)
-            .Include(p => p.ProductType)
-            .FirstOrDefaultAsync(p => p.Id == id);
-
+        var product = await _unitOfWork.Products.GetByIdAsync(id);
         if (product == null) throw new Exception("Product not found");
+
+        var supplier = await _unitOfWork.Suppliers.GetByIdAsync(product.SupplierId ?? 0);
+        var productType = await _unitOfWork.ProductTypes.GetByIdAsync(product.ProductTypeId ?? 0);
 
         return new ProductResponseDto
         {
             Id = product.Id,
             SupplierId = product.SupplierId ?? 0,
-            SupplierName = product.Supplier?.Name ?? "",
+            SupplierName = supplier?.Name ?? "",
             ProductTypeId = product.ProductTypeId ?? 0,
-            ProductTypeName = product.ProductType?.Name ?? "",
+            ProductTypeName = productType?.Name ?? "",
             Code = product.Code,
             Name = product.Name,
             Price = product.Price,
@@ -101,7 +104,7 @@ public class ProductService : IProductService
 
     public async Task<bool> UpdateProductAsync(int id, UpdateProductDto dto)
     {
-        var product = await _context.Products.FindAsync(id);
+        var product = await _unitOfWork.Products.GetByIdAsync(id);
         if (product == null) return false;
 
         product.Name = dto.Name;
@@ -109,27 +112,30 @@ public class ProductService : IProductService
         product.Stock = dto.Stock;
         product.Status = dto.Status;
 
-        await _context.SaveChangesAsync();
+        _unitOfWork.Products.Update(product);
+        await _unitOfWork.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> DeleteProductAsync(int id)
     {
-        var product = await _context.Products.FindAsync(id);
+        var product = await _unitOfWork.Products.GetByIdAsync(id);
         if (product == null) return false;
 
         product.Status = "inactive";
-        await _context.SaveChangesAsync();
+        _unitOfWork.Products.Update(product);
+        await _unitOfWork.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> UpdateStockAsync(int productId, int quantity)
     {
-        var product = await _context.Products.FindAsync(productId);
+        var product = await _unitOfWork.Products.GetByIdAsync(productId);
         if (product == null) return false;
 
         product.Stock = quantity;
-        await _context.SaveChangesAsync();
+        _unitOfWork.Products.Update(product);
+        await _unitOfWork.SaveChangesAsync();
         return true;
     }
 }

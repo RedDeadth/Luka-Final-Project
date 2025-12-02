@@ -1,6 +1,8 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.DTOs.CampaignDtos;
 using FinalProject.Application.DTOs.ProductDtos;
 using FinalProject.Application.Interfaces;
+using FinalProject.Domain.Interfaces;
 using FinalProject.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,21 +10,21 @@ namespace FinalProject.Infrastructure.Services;
 
 public class StudentService : IStudentService
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly LukitasDbContext _context;
 
-    public StudentService(LukitasDbContext context)
+    public StudentService(IUnitOfWork unitOfWork, LukitasDbContext context)
     {
+        _unitOfWork = unitOfWork;
         _context = context;
     }
 
     public IQueryable<CampaignResponseDto> GetAvailableCampaigns(int studentId)
     {
-        // Subconsulta para obtener IDs de campañas inscritas
         var enrolledCampaignIds = _context.Accounts
             .Where(a => a.UserId == studentId)
             .Select(a => a.CampaignId);
 
-        // Retorna IQueryable para que el filtrado se haga en BD
         return _context.Campaigns
             .Where(c => c.Active == true && 
                        c.EndDate >= DateOnly.FromDateTime(DateTime.Now) &&
@@ -50,24 +52,21 @@ public class StudentService : IStudentService
 
     public async Task<decimal> GetLukasBalanceAsync(int studentId)
     {
-        var totalBalance = await _context.Accounts
-            .Where(a => a.UserId == studentId && a.Status == "active")
-            .SumAsync(a => a.Balance ?? 0);
-
+        var accounts = _unitOfWork.Accounts.Query(a => a.UserId == studentId && a.Status == "active");
+        var totalBalance = await accounts.SumAsync(a => a.Balance ?? 0);
         return totalBalance;
     }
 
     public async Task<bool> PurchaseProductsAsync(ProductPurchaseDto dto)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             var studentBalance = await GetLukasBalanceAsync(dto.StudentId);
             decimal total = 0;
 
             foreach (var item in dto.Items)
             {
-                var product = await _context.Products.FindAsync(item.ProductId);
+                var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId);
                 if (product == null || product.Stock < item.Quantity)
                     throw new Exception($"Product {item.ProductId} not available");
 
@@ -77,7 +76,7 @@ public class StudentService : IStudentService
             if (studentBalance < total)
                 throw new Exception("Insufficient Lukas balance");
 
-            var studentAccount = await _context.Accounts
+            var studentAccount = await _unitOfWork.Accounts
                 .FirstOrDefaultAsync(a => a.UserId == dto.StudentId && a.Status == "active");
 
             if (studentAccount == null)
@@ -91,12 +90,11 @@ public class StudentService : IStudentService
                 Status = "completed"
             };
 
-            _context.Sales.Add(sale);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Sales.AddAsync(sale);
 
             foreach (var item in dto.Items)
             {
-                var product = await _context.Products.FindAsync(item.ProductId);
+                var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId);
                 
                 var saleDetail = new SaleDetail
                 {
@@ -107,29 +105,24 @@ public class StudentService : IStudentService
                     Subtotal = product.Price * item.Quantity
                 };
 
-                _context.SaleDetails.Add(saleDetail);
+                await _unitOfWork.SaleDetails.AddAsync(saleDetail);
                 product.Stock -= item.Quantity;
+                _unitOfWork.Products.Update(product);
             }
 
             studentAccount.Balance -= total;
+            _unitOfWork.Accounts.Update(studentAccount);
 
-            var supplierAccount = await _context.Accounts
+            var supplierAccount = await _unitOfWork.Accounts
                 .FirstOrDefaultAsync(a => a.UserId == dto.SupplierId && a.Status == "active");
 
             if (supplierAccount != null)
             {
                 supplierAccount.Balance += total;
+                _unitOfWork.Accounts.Update(supplierAccount);
             }
 
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
             return true;
-        }
-        catch
-        {
-            await transaction.RollbackAsync();
-            throw;
-        }
+        });
     }
 }

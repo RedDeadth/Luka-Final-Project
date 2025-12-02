@@ -1,3 +1,4 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.Common;
 using FinalProject.Application.DTOs.CompanyDtos;
 using FinalProject.Application.DTOs.StatisticsDtos;

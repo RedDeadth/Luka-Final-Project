@@ -1,7 +1,9 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.DTOs.CompanyDtos;
 using FinalProject.Application.DTOs.LukasDtos;
 using FinalProject.Application.DTOs.StatisticsDtos;
 using FinalProject.Application.Interfaces;
+using FinalProject.Domain.Interfaces;
 using FinalProject.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,11 +11,13 @@ namespace FinalProject.Infrastructure.Services;
 
 public class AdminService : IAdminService
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly LukitasDbContext _context;
     private static decimal _lukasToUsdRate = 0.10m;
 
-    public AdminService(LukitasDbContext context)
+    public AdminService(IUnitOfWork unitOfWork, LukitasDbContext context)
     {
+        _unitOfWork = unitOfWork;
         _context = context;
     }
 
@@ -36,25 +40,30 @@ public class AdminService : IAdminService
 
     public async Task<bool> ApproveCompanyAsync(CompanyApprovalDto dto)
     {
-        var company = await _context.Users.FindAsync(dto.CompanyId);
+        var company = await _unitOfWork.Users.GetByIdAsync(dto.CompanyId);
         if (company == null) return false;
 
         company.Active = dto.Approved;
-        await _context.SaveChangesAsync();
+        _unitOfWork.Users.Update(company);
+        await _unitOfWork.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<SystemStatisticsDto> GetSystemStatisticsAsync()
     {
-        var totalUsers = await _context.Users.CountAsync();
-        var totalStudents = await _context.Users.CountAsync(u => u.RoleId == 1);
-        var totalCompanies = await _context.Users.CountAsync(u => u.RoleId == 2);
-        var totalSuppliers = await _context.Suppliers.CountAsync();
-        var activeCampaigns = await _context.Campaigns.CountAsync(c => c.Active == true);
-        var totalLukasInCirculation = await _context.Accounts.SumAsync(a => a.Balance ?? 0);
-        var totalLukasSpent = await _context.Sales.SumAsync(s => s.Total);
-        var totalTransactions = await _context.Sales.CountAsync();
+        var totalUsers = await _unitOfWork.Users.CountAsync();
+        var totalStudents = await _unitOfWork.Users.CountAsync(u => u.RoleId == 1);
+        var totalCompanies = await _unitOfWork.Users.CountAsync(u => u.RoleId == 2);
+        var totalSuppliers = await _unitOfWork.Suppliers.CountAsync();
+        var activeCampaigns = await _unitOfWork.Campaigns.CountAsync(c => c.Active == true);
+        
+        var accounts = await _unitOfWork.Accounts.GetAllAsync(1, 100);
+        var totalLukasInCirculation = accounts.Items.Sum(a => a.Balance ?? 0);
+        
+        var sales = await _unitOfWork.Sales.GetAllAsync(1, 100);
+        var totalLukasSpent = sales.Items.Sum(s => s.Total);
+        var totalTransactions = await _unitOfWork.Sales.CountAsync();
 
         var recentActivity = await _context.Sales
             .OrderByDescending(s => s.SaleDate)
@@ -86,10 +95,10 @@ public class AdminService : IAdminService
 
     public async Task<bool> EmitLukasAsync(EmitLukasDto dto)
     {
-        var company = await _context.Users.FindAsync(dto.CompanyId);
+        var company = await _unitOfWork.Users.GetByIdAsync(dto.CompanyId);
         if (company == null) return false;
 
-        var companyAccount = await _context.Accounts
+        var companyAccount = await _unitOfWork.Accounts
             .FirstOrDefaultAsync(a => a.UserId == dto.CompanyId && a.Status == "active");
 
         if (companyAccount == null)
@@ -101,12 +110,13 @@ public class AdminService : IAdminService
                 Balance = 0,
                 Status = "active"
             };
-            _context.Accounts.Add(companyAccount);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Accounts.AddAsync(companyAccount);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         companyAccount.Balance += dto.Amount;
-        await _context.SaveChangesAsync();
+        _unitOfWork.Accounts.Update(companyAccount);
+        await _unitOfWork.SaveChangesAsync();
 
         return true;
     }

@@ -1,3 +1,4 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.Common;
 using FinalProject.Application.DTOs.CampaignDtos;
 using FinalProject.Application.Features.Campaign;
@@ -17,7 +18,7 @@ public class CreateCampaignCommandHandler : IRequestHandler<CreateCampaignComman
         var company = await _context.Users.FindAsync(new object[] { request.CompanyUserId }, cancellationToken);
         if (company == null) return Result<CampaignResponseDto>.NotFound("Company not found");
 
-        var campaign = new Infrastructure.Campaign
+        var campaign = new Domain.Entities.Campaign
         {
             UserId = request.CompanyUserId, Name = request.Name,
             Description = $"{request.Description}\nTipo: {request.CampaignType}\nImágenes: {string.Join(", ", request.ImageUrls ?? new List<string>())}",

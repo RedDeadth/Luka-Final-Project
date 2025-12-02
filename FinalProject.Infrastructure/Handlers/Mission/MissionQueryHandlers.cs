@@ -1,3 +1,4 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.Common;
 using FinalProject.Application.DTOs.MissionDtos;
 using FinalProject.Application.Features.Coupon;

@@ -1,5 +1,7 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.DTOs.CampaignDtos;
 using FinalProject.Application.Interfaces;
+using FinalProject.Domain.Interfaces;
 using FinalProject.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,16 +9,18 @@ namespace FinalProject.Infrastructure.Services;
 
 public class CampaignService : ICampaignService
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly LukitasDbContext _context;
 
-    public CampaignService(LukitasDbContext context)
+    public CampaignService(IUnitOfWork unitOfWork, LukitasDbContext context)
     {
+        _unitOfWork = unitOfWork;
         _context = context;
     }
 
     public async Task<CampaignResponseDto> CreateCampaignAsync(int companyUserId, CreateCampaignDto dto)
     {
-        var company = await _context.Users.FindAsync(companyUserId);
+        var company = await _unitOfWork.Users.GetByIdAsync(companyUserId);
         if (company == null) throw new Exception("Company not found");
 
         var campaign = new Campaign
@@ -33,8 +37,8 @@ public class CampaignService : ICampaignService
             Active = true
         };
 
-        _context.Campaigns.Add(campaign);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.Campaigns.AddAsync(campaign);
+        await _unitOfWork.SaveChangesAsync();
 
         return await GetCampaignByIdAsync(campaign.Id);
     }
@@ -66,12 +70,11 @@ public class CampaignService : ICampaignService
 
     public async Task<CampaignResponseDto> GetCampaignByIdAsync(int campaignId)
     {
-        var campaign = await _context.Campaigns
-            .Include(c => c.User)
-            .Include(c => c.Accounts)
-            .FirstOrDefaultAsync(c => c.Id == campaignId);
-
+        var campaign = await _unitOfWork.Campaigns.FirstOrDefaultAsync(c => c.Id == campaignId);
         if (campaign == null) throw new Exception("Campaign not found");
+
+        var user = await _unitOfWork.Users.GetByIdAsync(campaign.UserId ?? 0);
+        var accountsCount = await _unitOfWork.Accounts.CountAsync(a => a.CampaignId == campaignId);
 
         return new CampaignResponseDto
         {
@@ -87,19 +90,19 @@ public class CampaignService : ICampaignService
             Location = campaign.Location,
             ContactNumber = campaign.ContactNumber,
             Active = campaign.Active ?? true,
-            EnrolledStudents = campaign.Accounts.Count,
-            CompanyName = campaign.User!.Company
+            EnrolledStudents = accountsCount,
+            CompanyName = user?.Company
         };
     }
 
     public async Task<bool> EnrollStudentAsync(EnrollCampaignDto dto)
     {
-        var student = await _context.Users.FindAsync(dto.StudentId);
-        var campaign = await _context.Campaigns.FindAsync(dto.CampaignId);
+        var student = await _unitOfWork.Users.GetByIdAsync(dto.StudentId);
+        var campaign = await _unitOfWork.Campaigns.GetByIdAsync(dto.CampaignId);
 
         if (student == null || campaign == null) return false;
 
-        var existingAccount = await _context.Accounts
+        var existingAccount = await _unitOfWork.Accounts
             .FirstOrDefaultAsync(a => a.UserId == dto.StudentId && a.CampaignId == dto.CampaignId);
 
         if (existingAccount != null) return false;
@@ -113,8 +116,8 @@ public class CampaignService : ICampaignService
             Status = "active"
         };
 
-        _context.Accounts.Add(account);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.Accounts.AddAsync(account);
+        await _unitOfWork.SaveChangesAsync();
 
         return true;
     }

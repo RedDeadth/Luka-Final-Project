@@ -1,5 +1,7 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.DTOs.CouponDtos;
 using FinalProject.Application.Interfaces;
+using FinalProject.Domain.Interfaces;
 using FinalProject.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,10 +9,12 @@ namespace FinalProject.Infrastructure.Services;
 
 public class CouponService : ICouponService
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly LukitasDbContext _context;
 
-    public CouponService(LukitasDbContext context)
+    public CouponService(IUnitOfWork unitOfWork, LukitasDbContext context)
     {
+        _unitOfWork = unitOfWork;
         _context = context;
     }
 
@@ -27,28 +31,27 @@ public class CouponService : ICouponService
             Active = true
         };
 
-        _context.Coupons.Add(coupon);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.Coupons.AddAsync(coupon);
+        await _unitOfWork.SaveChangesAsync();
 
         return await GetCouponByCodeAsync(coupon.Code);
     }
 
     public async Task<CouponResponseDto> GetCouponByCodeAsync(string code)
     {
-        var coupon = await _context.Coupons
-            .Include(c => c.Campaign)
-            .Include(c => c.Supplier)
-            .FirstOrDefaultAsync(c => c.Code == code);
-
+        var coupon = await _unitOfWork.Coupons.FirstOrDefaultAsync(c => c.Code == code);
         if (coupon == null) throw new Exception("Coupon not found");
+
+        var campaign = await _unitOfWork.Campaigns.GetByIdAsync(coupon.CampaignId ?? 0);
+        var supplier = await _unitOfWork.Suppliers.GetByIdAsync(coupon.SupplierId ?? 0);
 
         return new CouponResponseDto
         {
             Id = coupon.Id,
             CampaignId = coupon.CampaignId ?? 0,
-            CampaignName = coupon.Campaign?.Name ?? "",
+            CampaignName = campaign?.Name ?? "",
             SupplierId = coupon.SupplierId ?? 0,
-            SupplierName = coupon.Supplier?.Name ?? "",
+            SupplierName = supplier?.Name ?? "",
             Code = coupon.Code,
             DiscountType = coupon.DiscountType ?? "",
             DiscountValue = coupon.DiscountValue,
@@ -101,7 +104,7 @@ public class CouponService : ICouponService
 
     public async Task<bool> ValidateCouponAsync(string code)
     {
-        var coupon = await _context.Coupons
+        var coupon = await _unitOfWork.Coupons
             .FirstOrDefaultAsync(c => c.Code == code && c.Active == true);
 
         if (coupon == null) return false;
@@ -111,11 +114,12 @@ public class CouponService : ICouponService
 
     public async Task<bool> DeactivateCouponAsync(int id)
     {
-        var coupon = await _context.Coupons.FindAsync(id);
+        var coupon = await _unitOfWork.Coupons.GetByIdAsync(id);
         if (coupon == null) return false;
 
         coupon.Active = false;
-        await _context.SaveChangesAsync();
+        _unitOfWork.Coupons.Update(coupon);
+        await _unitOfWork.SaveChangesAsync();
         return true;
     }
 }

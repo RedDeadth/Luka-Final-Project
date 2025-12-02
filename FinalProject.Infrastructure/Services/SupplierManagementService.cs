@@ -1,5 +1,7 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.DTOs.SupplierDtos;
 using FinalProject.Application.Interfaces;
+using FinalProject.Domain.Interfaces;
 using FinalProject.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,10 +9,12 @@ namespace FinalProject.Infrastructure.Services;
 
 public class SupplierManagementService : ISupplierManagementService
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly LukitasDbContext _context;
 
-    public SupplierManagementService(LukitasDbContext context)
+    public SupplierManagementService(IUnitOfWork unitOfWork, LukitasDbContext context)
     {
+        _unitOfWork = unitOfWork;
         _context = context;
     }
 
@@ -25,31 +29,30 @@ public class SupplierManagementService : ISupplierManagementService
             Status = "active"
         };
 
-        _context.Suppliers.Add(supplier);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.Suppliers.AddAsync(supplier);
+        await _unitOfWork.SaveChangesAsync();
 
         return await GetSupplierByIdAsync(supplier.Id);
     }
 
     public async Task<SupplierResponseDto> GetSupplierByIdAsync(int id)
     {
-        var supplier = await _context.Suppliers
-            .Include(s => s.SupplierType)
-            .Include(s => s.Products)
-            .FirstOrDefaultAsync(s => s.Id == id);
-
+        var supplier = await _unitOfWork.Suppliers.GetByIdAsync(id);
         if (supplier == null) throw new Exception("Supplier not found");
+
+        var supplierType = await _unitOfWork.SupplierTypes.GetByIdAsync(supplier.SupplierTypeId ?? 0);
+        var productsCount = await _unitOfWork.Products.CountAsync(p => p.SupplierId == id);
 
         return new SupplierResponseDto
         {
             Id = supplier.Id,
             SupplierTypeId = supplier.SupplierTypeId ?? 0,
-            SupplierTypeName = supplier.SupplierType?.Name ?? "",
+            SupplierTypeName = supplierType?.Name ?? "",
             Name = supplier.Name,
             Email = supplier.Email,
             Phone = supplier.Phone,
             Status = supplier.Status ?? "active",
-            TotalProducts = supplier.Products.Count
+            TotalProducts = productsCount
         };
     }
 
@@ -74,7 +77,7 @@ public class SupplierManagementService : ISupplierManagementService
 
     public async Task<bool> UpdateSupplierAsync(int id, CreateSupplierDto dto)
     {
-        var supplier = await _context.Suppliers.FindAsync(id);
+        var supplier = await _unitOfWork.Suppliers.GetByIdAsync(id);
         if (supplier == null) return false;
 
         supplier.SupplierTypeId = dto.SupplierTypeId;
@@ -82,17 +85,19 @@ public class SupplierManagementService : ISupplierManagementService
         supplier.Email = dto.Email;
         supplier.Phone = dto.Phone;
 
-        await _context.SaveChangesAsync();
+        _unitOfWork.Suppliers.Update(supplier);
+        await _unitOfWork.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> DeleteSupplierAsync(int id)
     {
-        var supplier = await _context.Suppliers.FindAsync(id);
+        var supplier = await _unitOfWork.Suppliers.GetByIdAsync(id);
         if (supplier == null) return false;
 
         supplier.Status = "inactive";
-        await _context.SaveChangesAsync();
+        _unitOfWork.Suppliers.Update(supplier);
+        await _unitOfWork.SaveChangesAsync();
         return true;
     }
 }

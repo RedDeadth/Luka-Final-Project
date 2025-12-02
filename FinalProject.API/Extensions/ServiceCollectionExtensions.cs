@@ -31,6 +31,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMissionService, MissionService>();
         services.AddScoped<ICouponService, CouponService>();
         services.AddScoped<ITransferService, TransferService>();
+        
+        // Servicio de IA - Recomendaciones con ML.NET
+        services.AddScoped<IRecommendationService, RecommendationService>();
 
         // Registrar servicio de hashing de contraseñas
         services.AddSingleton<IPasswordHasher, PasswordHasher>();

@@ -1,3 +1,4 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Application.Common;
 using FinalProject.Application.DTOs.ProductDtos;
 using FinalProject.Application.Features.Product;
@@ -44,7 +45,7 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
 
     public async Task<Result<ProductResponseDto>> Handle(CreateProductCommand request, CancellationToken cancellationToken)
     {
-        var product = new Infrastructure.Product
+        var product = new Domain.Entities.Product
         {
             SupplierId = request.SupplierId, ProductTypeId = request.ProductTypeId,
             Code = request.Code, Name = request.Name, Price = request.Price, Stock = request.Stock, Status = "active"

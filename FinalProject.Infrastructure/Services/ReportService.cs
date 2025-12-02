@@ -1,4 +1,6 @@
+using FinalProject.Domain.Entities;
 using ClosedXML.Excel;
+using FinalProject.Domain.Interfaces;
 using FinalProject.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,10 +8,12 @@ namespace FinalProject.Infrastructure.Services;
 
 public class ReportService
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly LukitasDbContext _context;
 
-    public ReportService(LukitasDbContext context)
+    public ReportService(IUnitOfWork unitOfWork, LukitasDbContext context)
     {
+        _unitOfWork = unitOfWork;
         _context = context;
     }
 
@@ -30,7 +34,6 @@ public class ReportService
         using var workbook = new XLWorkbook();
         var worksheet = workbook.Worksheets.Add("Transferencias");
 
-        // Título
         worksheet.Cell("A1").Value = "REPORTE DE TRANSFERENCIAS";
         worksheet.Range("A1:F1").Merge();
         worksheet.Cell("A1").Style.Font.Bold = true;
@@ -39,11 +42,9 @@ public class ReportService
         worksheet.Cell("A1").Style.Fill.BackgroundColor = XLColor.DarkBlue;
         worksheet.Cell("A1").Style.Font.FontColor = XLColor.White;
 
-        // Fecha de generación
         worksheet.Cell("A2").Value = $"Generado: {DateTime.Now:dd/MM/yyyy HH:mm}";
         worksheet.Range("A2:F2").Merge();
 
-        // Encabezados
         var headers = new[] { "ID", "Fecha", "Origen", "Destino", "Monto", "Estado" };
         for (int i = 0; i < headers.Length; i++)
         {
@@ -53,7 +54,6 @@ public class ReportService
             worksheet.Cell(4, i + 1).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
         }
 
-        // Datos
         int row = 5;
         foreach (var t in transfers)
         {
@@ -65,7 +65,6 @@ public class ReportService
             worksheet.Cell(row, 5).Style.NumberFormat.Format = "#,##0.00";
             worksheet.Cell(row, 6).Value = t.Status;
             
-            // Color según estado
             if (t.Status == "completed")
                 worksheet.Cell(row, 6).Style.Font.FontColor = XLColor.Green;
             else
@@ -74,7 +73,6 @@ public class ReportService
             row++;
         }
 
-        // Total
         worksheet.Cell(row + 1, 4).Value = "TOTAL:";
         worksheet.Cell(row + 1, 4).Style.Font.Bold = true;
         worksheet.Cell(row + 1, 5).FormulaA1 = $"=SUM(E5:E{row - 1})";
@@ -87,7 +85,6 @@ public class ReportService
         workbook.SaveAs(stream);
         return stream.ToArray();
     }
-
 
     public async Task<byte[]> GenerateSalesReportAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
@@ -106,7 +103,6 @@ public class ReportService
         using var workbook = new XLWorkbook();
         var worksheet = workbook.Worksheets.Add("Ventas");
 
-        // Título
         worksheet.Cell("A1").Value = "REPORTE DE VENTAS";
         worksheet.Range("A1:F1").Merge();
         worksheet.Cell("A1").Style.Font.Bold = true;
@@ -118,7 +114,6 @@ public class ReportService
         worksheet.Cell("A2").Value = $"Generado: {DateTime.Now:dd/MM/yyyy HH:mm}";
         worksheet.Range("A2:F2").Merge();
 
-        // Encabezados
         var headers = new[] { "ID", "Fecha", "Cliente", "Total", "Estado", "Productos" };
         for (int i = 0; i < headers.Length; i++)
         {
@@ -141,7 +136,6 @@ public class ReportService
             row++;
         }
 
-        // Total
         worksheet.Cell(row + 1, 3).Value = "TOTAL VENTAS:";
         worksheet.Cell(row + 1, 3).Style.Font.Bold = true;
         worksheet.Cell(row + 1, 4).FormulaA1 = $"=SUM(D5:D{row - 1})";
@@ -168,7 +162,6 @@ public class ReportService
         using var workbook = new XLWorkbook();
         var worksheet = workbook.Worksheets.Add("Usuarios");
 
-        // Título
         worksheet.Cell("A1").Value = "REPORTE DE USUARIOS";
         worksheet.Range("A1:H1").Merge();
         worksheet.Cell("A1").Style.Font.Bold = true;
@@ -180,7 +173,6 @@ public class ReportService
         worksheet.Cell("A2").Value = $"Generado: {DateTime.Now:dd/MM/yyyy HH:mm}";
         worksheet.Range("A2:H2").Merge();
 
-        // Encabezados
         var headers = new[] { "ID", "Nombre", "Apellido", "Email", "Rol", "Empresa/Universidad", "Balance", "Estado" };
         for (int i = 0; i < headers.Length; i++)
         {
@@ -203,7 +195,6 @@ public class ReportService
             worksheet.Cell(row, 7).Style.NumberFormat.Format = "#,##0.00";
             worksheet.Cell(row, 8).Value = u.Active == true ? "Activo" : "Inactivo";
             
-            // Color según rol
             var roleColor = u.RoleId switch
             {
                 1 => XLColor.LightBlue,
@@ -216,7 +207,6 @@ public class ReportService
             row++;
         }
 
-        // Resumen
         row += 2;
         worksheet.Cell(row, 1).Value = "RESUMEN";
         worksheet.Cell(row, 1).Style.Font.Bold = true;

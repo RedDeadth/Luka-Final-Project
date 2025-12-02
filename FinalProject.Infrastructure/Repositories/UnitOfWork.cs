@@ -1,13 +1,13 @@
+using FinalProject.Domain.Entities;
 using FinalProject.Domain.Interfaces;
 using FinalProject.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinalProject.Infrastructure.Repositories;
 
 public class UnitOfWork : IUnitOfWork
 {
     private readonly LukitasDbContext _context;
-    private IDbContextTransaction? _transaction;
 
     public UnitOfWork(LukitasDbContext context)
     {
@@ -50,34 +50,59 @@ public class UnitOfWork : IUnitOfWork
         return await _context.SaveChangesAsync();
     }
 
-    public async Task BeginTransactionAsync()
+    /// <summary>
+    /// Ejecuta una operación dentro de una transacción con soporte para reintentos.
+    /// Compatible con MySqlRetryingExecutionStrategy.
+    /// </summary>
+    public async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> operation)
     {
-        _transaction = await _context.Database.BeginTransactionAsync();
+        var strategy = _context.Database.CreateExecutionStrategy();
+        
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var result = await operation();
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return result;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        });
     }
 
-    public async Task CommitTransactionAsync()
+    /// <summary>
+    /// Ejecuta una operación dentro de una transacción con soporte para reintentos.
+    /// Compatible con MySqlRetryingExecutionStrategy.
+    /// </summary>
+    public async Task ExecuteInTransactionAsync(Func<Task> operation)
     {
-        if (_transaction != null)
+        var strategy = _context.Database.CreateExecutionStrategy();
+        
+        await strategy.ExecuteAsync(async () =>
         {
-            await _transaction.CommitAsync();
-            await _transaction.DisposeAsync();
-            _transaction = null;
-        }
-    }
-
-    public async Task RollbackTransactionAsync()
-    {
-        if (_transaction != null)
-        {
-            await _transaction.RollbackAsync();
-            await _transaction.DisposeAsync();
-            _transaction = null;
-        }
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await operation();
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        });
     }
 
     public void Dispose()
     {
-        _transaction?.Dispose();
         _context.Dispose();
     }
 }
