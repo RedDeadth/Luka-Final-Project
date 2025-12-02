@@ -8,6 +8,18 @@ builder.Services.AddControllers();
 // builder.Services.AddOpenApi(); // removed in favor of Swashbuckle
 builder.Services.AddSwaggerGen();
 
+// CORS para React
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReact", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
                                                                                                                                                                                                                                                                                         
@@ -22,6 +34,8 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = "swagger";
     });
 }
+
+app.UseCors("AllowReact");
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseMiddleware<LoggingMiddleware>();

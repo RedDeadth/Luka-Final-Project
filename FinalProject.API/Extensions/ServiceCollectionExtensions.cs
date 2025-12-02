@@ -34,7 +34,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
-        var serverVersion = new MySqlServerVersion(new Version(9, 0, 1));
+        var serverVersion = new MySqlServerVersion(new Version(9, 2, 0));
         services.AddDbContext<LukitasDbContext>(options =>
             options.UseMySql(connectionString, serverVersion));
 
