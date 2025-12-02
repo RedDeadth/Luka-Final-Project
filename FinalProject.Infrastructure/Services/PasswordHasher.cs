@@ -16,10 +16,16 @@ public class PasswordHasher : IPasswordHasher
     }
 
     /// <summary>
-    /// Verifies a password against a BCrypt hash
+    /// Verifies a password against a BCrypt hash or plain text (for development)
     /// </summary>
     public bool VerifyPassword(string password, string hash)
     {
+        // Si el hash no empieza con $2, es texto plano (desarrollo)
+        if (!hash.StartsWith("$2"))
+        {
+            return password == hash;
+        }
+        
         try
         {
             return BCrypt.Net.BCrypt.Verify(password, hash);
