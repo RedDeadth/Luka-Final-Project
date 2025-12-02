@@ -1,0 +1,10 @@
+using FinalProject.Application.DTOs.TransferDtos;
+
+namespace FinalProject.Application.Interfaces;
+
+public interface ITransferService
+{
+    Task<TransferResponseDto> CreateTransferAsync(CreateTransferDto dto);
+    Task<List<TransferResponseDto>> GetTransfersByAccountAsync(int accountId);
+    Task<TransferResponseDto> GetTransferByIdAsync(int id);
+}

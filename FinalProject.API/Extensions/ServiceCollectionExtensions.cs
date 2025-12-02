@@ -17,6 +17,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStudentService, StudentService>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<ISupplierService, SupplierService>();
+        services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<ISupplierManagementService, SupplierManagementService>();
+        services.AddScoped<IMissionService, MissionService>();
+        services.AddScoped<ICouponService, CouponService>();
+        services.AddScoped<ITransferService, TransferService>();
         return services;
     }
 
