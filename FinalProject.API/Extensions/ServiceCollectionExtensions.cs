@@ -11,7 +11,13 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        // Registrar servicios de negocio (implementaciones en Infrastructure)
+        // Registrar MediatR - handlers están en Infrastructure
+        services.AddMediatR(cfg => {
+            cfg.RegisterServicesFromAssembly(typeof(FinalProject.Application.Common.ICommand).Assembly);
+            cfg.RegisterServicesFromAssembly(typeof(FinalProject.Infrastructure.Handlers.Auth.LoginCommandHandler).Assembly);
+        });
+        
+        // Registrar servicios de negocio (implementaciones en Infrastructure) - mantener para compatibilidad con V1
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICampaignService, CampaignService>();
         services.AddScoped<IStudentService, StudentService>();
