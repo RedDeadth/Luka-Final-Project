@@ -23,6 +23,9 @@ Sistema de gestión de moneda virtual "Lukitas" para entornos educativos que per
 | MediatR | 12.4.1 | Implementación CQRS |
 | JWT | 8.14.0 | Autenticación |
 | Swashbuckle | 7.0.0 | Documentación Swagger |
+| Hangfire.Core | 1.8.22 | Procesamiento en segundo plano |
+| Hangfire.AspNetCore | 1.8.22 | Integración Hangfire con ASP.NET Core |
+| Hangfire.MySqlStorage | 2.0.3 | Storage de Hangfire en MySQL |
 
 ---
 
@@ -397,7 +400,162 @@ public class GetCouponsByCampaignQueryHandler
 
 ---
 
-## 8. PATRONES DE DISEÑO IMPLEMENTADOS
+## 8. HANGFIRE - PROCESAMIENTO EN SEGUNDO PLANO
+
+### 8.1 Descripción
+Hangfire es una librería para procesamiento de tareas en segundo plano en aplicaciones .NET. Permite ejecutar jobs de forma automática, recurrente o bajo demanda sin necesidad de servicios externos.
+
+### 8.2 Configuración
+Hangfire está configurado en el proyecto siguiendo la arquitectura hexagonal:
+
+**Ubicación**: `FinalProject.API/Extensions/ServiceCollectionExtensions.cs`
+
+```csharp
+public static IServiceCollection AddHangfireServices(
+    this IServiceCollection services, IConfiguration configuration)
+{
+    var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+    // Configurar Hangfire con MySQL Storage
+    services.AddHangfire(config => config
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseStorage(new MySqlStorage(connectionString, options)));
+
+    // Servidor Hangfire con 5 workers
+    services.AddHangfireServer(options =>
+    {
+        options.WorkerCount = 5;
+        options.ServerName = "FinalProject-HangfireServer";
+    });
+
+    // Registrar Jobs
+    services.AddScoped<ExpireCouponsJob>();
+    services.AddScoped<DataCleanupJob>();
+    services.AddScoped<DailyStatisticsJob>();
+
+    return services;
+}
+```
+
+### 8.3 Jobs Implementados
+
+**Ubicación**: `FinalProject.Infrastructure/Jobs/`
+
+#### 1. ExpireCouponsJob
+- **Propósito**: Expirar cupones vencidos automáticamente
+- **Frecuencia**: Diariamente a las 00:00 UTC
+- **Lógica**:
+  - Busca cupones con `ExpirationDate < hoy` y `Active == true`
+  - Marca los cupones como `Active = false`
+  - Registra logs con cantidad de cupones expirados
+
+#### 2. DataCleanupJob
+- **Propósito**: Limpiar datos antiguos del sistema
+- **Frecuencia**: Semanalmente los domingos a las 02:00 UTC
+- **Lógica**:
+  - Elimina cupones vencidos mayores a 6 meses
+  - Mantiene la base de datos limpia
+  - Registro de logs con total de registros eliminados
+
+#### 3. DailyStatisticsJob
+- **Propósito**: Generar estadísticas diarias del sistema
+- **Frecuencia**: Diariamente a las 23:00 UTC
+- **Métricas**:
+  - Ventas del día
+  - Transferencias del día
+  - Total de Lukitas en el sistema
+  - Campañas activas
+  - Total de usuarios
+- **Salida**: Logs estructurados para auditoría
+
+### 8.4 Configuración de Jobs Recurrentes
+
+**Ubicación**: `FinalProject.API/Extensions/HangfireJobsConfiguration.cs`
+
+```csharp
+public static void ConfigureRecurringJobs()
+{
+    RecurringJob.AddOrUpdate<ExpireCouponsJob>(
+        "expire-coupons-daily",
+        job => job.ExecuteAsync(),
+        Cron.Daily(0, 0),
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+    RecurringJob.AddOrUpdate<DataCleanupJob>(
+        "data-cleanup-weekly",
+        job => job.ExecuteAsync(),
+        Cron.Weekly(DayOfWeek.Sunday, 2, 0),
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+    RecurringJob.AddOrUpdate<DailyStatisticsJob>(
+        "daily-statistics",
+        job => job.ExecuteAsync(),
+        Cron.Daily(23, 0),
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+}
+```
+
+### 8.5 Dashboard de Hangfire
+
+**URL**: http://localhost:5140/hangfire (solo en desarrollo)
+
+El dashboard permite:
+- Ver jobs en ejecución
+- Monitorear trabajos programados
+- Ver historial de ejecuciones
+- Reintentarjobs fallidos manualmente
+- Ver servidores activos
+
+**Seguridad**: En desarrollo el acceso es libre, en producción se debe implementar autenticación (filtro `HangfireAuthorizationFilter` en `FinalProject.API/Filters/`).
+
+### 8.6 Configuración en Program.cs
+
+**Ubicación**: `FinalProject.API/Program.cs`
+
+```csharp
+// Registro de servicios
+builder.Services.AddHangfireServices(builder.Configuration);
+
+// Configuración del middleware y dashboard
+app.UseHangfireDashboard("/hangfire", options);
+
+// Configuración de jobs recurrentes al iniciar
+HangfireJobsConfiguration.ConfigureRecurringJobs();
+```
+
+### 8.7 Tablas de Base de Datos
+
+Hangfire crea automáticamente las siguientes tablas en MySQL (con prefijo `Hangfire`):
+- `Hangfire.Job`: Jobs almacenados
+- `Hangfire.State`: Estados de jobs
+- `Hangfire.Set`: Conjuntos de jobs
+- `Hangfire.Counter`: Contadores
+- `Hangfire.Hash`: Hashes
+- `Hangfire.List`: Listas
+- `Hangfire.AggregatedCounter`: Contadores agregados
+- `Hangfire.Server`: Servidores activos
+- `Hangfire.JobParameter`: Parámetros de jobs
+- `Hangfire.JobQueue`: Cola de jobs
+
+### 8.8 Archivos Modificados/Creados
+
+#### Archivos Modificados:
+1. `FinalProject.API/FinalProject.API.csproj` - Agregados paquetes NuGet
+2. `FinalProject.API/Extensions/ServiceCollectionExtensions.cs` - Método `AddHangfireServices()`
+3. `FinalProject.API/Program.cs` - Configuración de Hangfire y dashboard
+
+#### Archivos Creados:
+4. `FinalProject.API/Extensions/HangfireJobsConfiguration.cs` - Configuración de jobs recurrentes
+5. `FinalProject.API/Filters/HangfireAuthorizationFilter.cs` - Filtro de autorización
+6. `FinalProject.Infrastructure/Jobs/ExpireCouponsJob.cs` - Job de expiración de cupones
+7. `FinalProject.Infrastructure/Jobs/DataCleanupJob.cs` - Job de limpieza de datos
+8. `FinalProject.Infrastructure/Jobs/DailyStatisticsJob.cs` - Job de estadísticas diarias
+
+---
+
+## 9. PATRONES DE DISEÑO IMPLEMENTADOS
 
 | Patrón | Ubicación | Propósito |
 |--------|-----------|-----------|
@@ -408,10 +566,11 @@ public class GetCouponsByCampaignQueryHandler
 | DTO | Application/DTOs/ | Transferencia de datos |
 | Dependency Injection | ServiceCollectionExtensions | Inyección de dependencias |
 | Clean Architecture | 4 proyectos | Separación de responsabilidades |
+| Background Jobs | Hangfire | Tareas programadas y en segundo plano |
 
 ---
 
-## 9. SEGURIDAD Y BUENAS PRÁCTICAS
+## 10. SEGURIDAD Y BUENAS PRÁCTICAS
 
 ### 9.1 Autenticación JWT
 - Token con expiración de 8 horas
@@ -431,7 +590,7 @@ public class GetCouponsByCampaignQueryHandler
 
 ---
 
-## 10. CÓMO EJECUTAR
+## 11. CÓMO EJECUTAR
 
 ### Requisitos
 - .NET 9.0 SDK
@@ -446,10 +605,11 @@ dotnet run
 ### Acceso
 - API: http://localhost:5140
 - Swagger: http://localhost:5140/swagger
+- **Hangfire Dashboard**: http://localhost:5140/hangfire
 
 ---
 
-## 11. RESUMEN DE CUMPLIMIENTO
+## 12. RESUMEN DE CUMPLIMIENTO
 
 | Requisito | Estado |
 |-----------|--------|
@@ -464,12 +624,12 @@ dotnet run
 | DTOs | ✅ Implementado |
 | Swagger | ✅ Implementado |
 | **CQRS + MediatR** | ✅ **Implementado** |
-| Hangfire | ❌ No implementado |
+| **Hangfire** | ✅ **Implementado** |
 | ClosedXML (Excel) | ❌ No implementado |
 
 ---
 
-## 12. ESTADÍSTICAS DEL PROYECTO
+## 13. ESTADÍSTICAS DEL PROYECTO
 
 | Métrica | Cantidad |
 |---------|----------|
@@ -482,8 +642,11 @@ dotnet run
 | Handlers | 33 |
 | DTOs | 30+ |
 | Endpoints totales | 70+ |
+| **Jobs de Hangfire** | **3** |
+| **Middlewares** | **3** |
+| **Filtros** | **1** |
 
 ---
 
 *Documento actualizado el 2 de Diciembre de 2025*
-*Commit: feat(CQRS): Implementación completa del patrón CQRS con MediatR*
+*Último commit: feat(Hangfire): Implementación completa de Hangfire para background jobs*
