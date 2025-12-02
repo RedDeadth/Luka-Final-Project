@@ -1,6 +1,6 @@
+using FinalProject.Application.Common;
+using MediatR;
+
 namespace FinalProject.Application.Commands.User.ChangeEmail;
 
-public class ChangeEmailCommand
-{
-    
-}
+public record ChangeEmailCommand(int UserId, string NewEmail) : IRequest<Result<bool>>;

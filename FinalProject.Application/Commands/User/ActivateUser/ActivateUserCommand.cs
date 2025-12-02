@@ -1,6 +1,6 @@
+using FinalProject.Application.Common;
+using MediatR;
+
 namespace FinalProject.Application.Commands.User.ActivateUser;
 
-public class ActivateUserCommand
-{
-    
-}
+public record ActivateUserCommand(int UserId) : IRequest<Result<bool>>;

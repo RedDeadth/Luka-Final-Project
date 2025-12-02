@@ -1,6 +1,6 @@
+using FinalProject.Application.Common;
+using MediatR;
+
 namespace FinalProject.Application.Commands.User.DeactivateUser;
 
-public class DeactivateUserCommand
-{
-    
-}
+public record DeactivateUserCommand(int UserId) : IRequest<Result<bool>>;
