@@ -13,11 +13,13 @@ public class AuthService : IAuthService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IConfiguration _configuration;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public AuthService(IUnitOfWork unitOfWork, IConfiguration configuration)
+    public AuthService(IUnitOfWork unitOfWork, IConfiguration configuration, IPasswordHasher passwordHasher)
     {
         _unitOfWork = unitOfWork;
         _configuration = configuration;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto request)
@@ -28,7 +30,7 @@ public class AuthService : IAuthService
         if (user == null)
             return null;
 
-        if (!VerifyPassword(request.Password, user.Password))
+        if (!_passwordHasher.VerifyPassword(request.Password, user.Password))
             return null;
 
         var role = await _unitOfWork.Roles.GetByIdAsync(user.RoleId ?? 0);
@@ -100,8 +102,4 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private bool VerifyPassword(string inputPassword, string storedPassword)
-    {
-        return inputPassword == storedPassword;
-    }
 }

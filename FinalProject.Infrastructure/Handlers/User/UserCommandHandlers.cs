@@ -8,6 +8,7 @@ using FinalProject.Application.Commands.User.DeleteUser;
 using FinalProject.Application.Commands.User.UpdateUser;
 using FinalProject.Application.Common;
 using FinalProject.Application.DTOs.UserDtos;
+using FinalProject.Application.Interfaces;
 using FinalProject.Domain.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -17,10 +18,12 @@ namespace FinalProject.Infrastructure.Handlers.User;
 public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Result<UserDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public CreateUserCommandHandler(IUnitOfWork unitOfWork)
+    public CreateUserCommandHandler(IUnitOfWork unitOfWork, IPasswordHasher passwordHasher)
     {
         _unitOfWork = unitOfWork;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<Result<UserDto>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -48,7 +51,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
                 FirstName = dto.FirstName,
                 LastName = dto.LastName,
                 Email = dto.Email,
-                Password = dto.Password,
+                Password = _passwordHasher.HashPassword(dto.Password),
                 RoleId = role.Id,
                 Active = true,
                 Company = string.Empty,
@@ -266,10 +269,12 @@ public class ChangeEmailCommandHandler : IRequestHandler<ChangeEmailCommand, Res
 public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordCommand, Result<bool>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public ChangePasswordCommandHandler(IUnitOfWork unitOfWork)
+    public ChangePasswordCommandHandler(IUnitOfWork unitOfWork, IPasswordHasher passwordHasher)
     {
         _unitOfWork = unitOfWork;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<Result<bool>> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
@@ -281,10 +286,10 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
             if (user == null)
                 return Result<bool>.NotFound("User not found");
 
-            if (user.Password != request.CurrentPassword)
+            if (!_passwordHasher.VerifyPassword(request.CurrentPassword, user.Password))
                 return Result<bool>.Failure("Current password is incorrect", 401);
 
-            user.Password = request.NewPassword;
+            user.Password = _passwordHasher.HashPassword(request.NewPassword);
             _unitOfWork.Users.Update(user);
             await _unitOfWork.SaveChangesAsync();
 

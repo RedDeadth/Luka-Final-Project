@@ -28,6 +28,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMissionService, MissionService>();
         services.AddScoped<ICouponService, CouponService>();
         services.AddScoped<ITransferService, TransferService>();
+
+        // Registrar servicio de hashing de contraseñas
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+
         return services;
     }
 
