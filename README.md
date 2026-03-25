@@ -1,11 +1,17 @@
 # Luka Final Project - Enterprise API
 
-Advanced Virtual Currency Management System for Educational Ecosystems.
-Built with .NET 9.0, PostgreSQL, Entity Framework Core, Hangfire, and Swagger.
+Sistema de moneda virtual (Lukitas) para ecosistemas educativos — empresas emiten moneda, estudiantes compran y completan misiones.
+
+<div align="left">
+  [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
+  [![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp)](https://docs.microsoft.com/en-us/dotnet/csharp/)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+  [![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](https://swagger.io/)
+</div>
 
 ## Software Architecture
 
-This project strictly adheres to the Clean Architecture pattern, structured into four main layers, implementing CQRS (Command Query Responsibility Segregation) orchestrated via MediatR. Both HTTP endpoints and background jobs rely on specialized handlers to process business logic, decoupling the infrastructure from the core domain.
+This project is structured around the Clean Architecture pattern with four main layers, implementing CQRS orchestrated via MediatR to decouple infrastructure from the core domain.
 
 ## Detailed Directory Structure
 
@@ -31,7 +37,7 @@ This project strictly adheres to the Clean Architecture pattern, structured into
 │   ├── Jobs                   # Hangfire Background Tasks (DailyStatistics, ExpireCoupons)
 │   ├── Repositories           # Generic Repository Implementations
 │   └── Services               # Legacy Infrastructure Services
-├── database_schema.sql        # Master database schema script
+├── database_schema.sql        # Database schema script
 ├── render.yaml                # Render.com CI/CD architecture blueprint
 └── Dockerfile                 # Containerization instructions
 ```
@@ -52,7 +58,7 @@ cp FinalProject.API/appsettings.example.json FinalProject.API/appsettings.json
 ### Database (Database-First Scaffolding)
 This project is designed using the **Database-First (Scaffolding)** approach rather than Code-First Migrations.
 To establish the database structure:
-1. Execute the `database_schema.sql` master script directly in your PostgreSQL database console.
+1. Execute the `database_schema.sql` script directly in your PostgreSQL database console.
 2. Entity Framework Core is designed to automatically map its configured DbSets against the previously constructed schema without altering it.
 
 ### Execution
