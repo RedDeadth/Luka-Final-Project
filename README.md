@@ -1,62 +1,65 @@
-<div align="center">
-  <h1>💰 Luka Final Project - Enterprise API</h1>
-  <p><b>Advanced Virtual Currency Management System for Educational Ecosystems</b></p>
-  
-  [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
-  [![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp)](https://docs.microsoft.com/en-us/dotnet/csharp/)
-  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-  [![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](https://swagger.io/)
-</div>
+# Luka Final Project - Enterprise API
 
----
+Advanced Virtual Currency Management System for Educational Ecosystems.
+Built with .NET 9.0, PostgreSQL, Entity Framework Core, Hangfire, and Swagger.
 
-## 📖 Visión General
-**Luka** es un ecosistema financiero virtual diseñado bajo estrictos estándares corporativos para entornos estudiantiles. La API actúa como un orquestador central que permite a empresas emitir moneda (`Lukitas`), a estudiantes realizar compras y cumplir misiones mediante Arquitectura Limpia, y a los proveedores transaccionar en tiempo real.
+## Software Architecture
 
-## 🏗️ Arquitectura de Software
-Este proyecto se rige fielmente bajo el patrón **Clean Architecture** estructurado en 4 capas profundas, implementando segregación **CQRS** (Command Query Responsibility Segregation) orquestado a través de **MediatR**.
+This project strictly adheres to the Clean Architecture pattern, structured into four main layers, implementing CQRS (Command Query Responsibility Segregation) orchestrated via MediatR. Both HTTP endpoints and background jobs rely on specialized handlers to process business logic, decoupling the infrastructure from the core domain.
 
-* **`FinalProject.Domain`**: Entidades core del negocio (Users, Products, Transfers).
-* **`FinalProject.Application`**: DTOs, Interfaces, y todos los `Commands/Queries` del sistema.
-* **`FinalProject.Infrastructure`**: DbContext (Entity Framework Core), Repositorios, CQRS Handlers y Jobs en segundo plano (Hangfire).
-* **`FinalProject.API`**: Exposición REST estandarizada V2.
+## Detailed Directory Structure
 
-## 🚀 Características Premium
-- **Background Jobs (Hangfire):** El sistema autolimpia cupones expirados a medianoche y genera estadísticas semanales de auditoría sin colgar el hilo principal.
-- **Seguridad Inquebrantable:** Endpoints asegurados por `JWT` (JSON Web Tokens) estructurados con Claims y Roles granulares.
-- **MediatR en todas sus venas:** Todos los endpoints HTTP son 100% inertes; únicamente disparan `.Send()` hacia los Handlers de Infrastructure.
-- **Paginación Universal:** Ningún registro de base de datos colapsa en memoria gracias a los `GenericRepositories` paginados obligatorios.
+```text
+├── FinalProject.API
+│   ├── Controllers/V2         # CQRS API Endpoints (Admin, Auth, Campaigns, etc.)
+│   ├── Extensions             # Service Registrations (Hangfire, MediatR, DbContext)
+│   ├── Filters                # API Filters (e.g., Hangfire Authorization)
+│   ├── Middlewares            # Global Error Handling & JWT Middleware
+│   ├── appsettings.json       # Local configuration secrets
+│   └── Program.cs             # Application Entry Point
+├── FinalProject.Application
+│   ├── Common                 # Base CQRS Interfaces (ICommand, IQuery, Result)
+│   ├── DTOs                   # Data Transfer Objects
+│   ├── Features               # MediatR Commands and Queries definitions
+│   └── Interfaces             # Legacy Service Contracts
+├── FinalProject.Domain
+│   ├── Entities               # Core Database Models (Account, Campaign, Coupon...)
+│   └── Interfaces             # Core Repository Contracts (IUnitOfWork, IGenericRepository)
+├── FinalProject.Infrastructure
+│   ├── Data                   # Entity Framework DbContext (LukitasDbContext)
+│   ├── Handlers               # MediatR CQRS Handlers implementation
+│   ├── Jobs                   # Hangfire Background Tasks (DailyStatistics, ExpireCoupons)
+│   ├── Repositories           # Generic Repository Implementations
+│   └── Services               # Legacy Infrastructure Services
+├── database_schema.sql        # Master database schema script
+├── render.yaml                # Render.com CI/CD architecture blueprint
+└── Dockerfile                 # Containerization instructions
+```
 
----
+## Deployment Instructions
 
-## 🛠️ Instrucciones de Despliegue Local
+### Prerequisites
+- .NET 9.0 SDK or higher.
+- PostgreSQL Server running on port 5432.
+- `appsettings.json` accurately configured with your credentials.
 
-### 1. Requisitos Previos
-* **.NET 9.0 SDK** o superior.
-* Servidor **PostgreSQL** corriendo en el puerto 5432.
-* Archivos confidenciales (`appsettings.json`) apropiadamente configurados con tus credenciales.
-
-### 2. Configurar el Entorno
-Copia la estructura del entorno seguro renombrando la plantilla:
+### Configuration
+Copy the sample environment template to define your connection string and JWT Key:
 ```bash
 cp FinalProject.API/appsettings.example.json FinalProject.API/appsettings.json
 ```
-*(No olvides inyectar en este nuevo archivo tu frase semilla secreta JWT y acceso a la Base de Datos).*
 
-### 3. Base de Datos (Database-First Scaffolding)
-Este proyecto ha sido diseñado con el enfoque **Database-First** (Scaffolding) en lugar de Migraciones guiadas por código. 
-Para configurar tus tablas:
-1. Ejecuta el script maestro corporativo `database_schema.sql` directamente en tu consola de base de datos.
-2. Entity Framework Core se encargará de mapear de forma automática sus entidades contra la estructura ya construida.
+### Database (Database-First Scaffolding)
+This project is designed using the **Database-First (Scaffolding)** approach rather than Code-First Migrations.
+To establish the database structure:
+1. Execute the `database_schema.sql` master script directly in your PostgreSQL database console.
+2. Entity Framework Core is designed to automatically map its configured DbSets against the previously constructed schema without altering it.
 
-### 4. Ejecución (Modo Desarrollo)
-Lanza la API con Swagger de manera nativa:
+### Execution
+Launch the API locally:
 ```bash
 cd FinalProject.API
 dotnet run
 ```
-> La interfaz interactiva **Swagger UI** estará disponible en: `http://localhost:5140/swagger`
-> El Dashboard de control de **Hangfire** estará en: `http://localhost:5140/hangfire`
-
----
-*Arquitecto y Desarrollador: **RedDeadth**.*
+- **Swagger UI**: `http://localhost:5140/swagger`
+- **Hangfire Dashboard**: `http://localhost:5140/hangfire`
