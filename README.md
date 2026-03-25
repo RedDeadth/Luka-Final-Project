@@ -4,7 +4,7 @@
   
   [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
   [![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp)](https://docs.microsoft.com/en-us/dotnet/csharp/)
-  [![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
   [![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](https://swagger.io/)
 </div>
 
@@ -33,7 +33,7 @@ Este proyecto se rige fielmente bajo el patrón **Clean Architecture** estructur
 
 ### 1. Requisitos Previos
 * **.NET 9.0 SDK** o superior.
-* Servidor **MySQL** corriendo en el puerto 3306.
+* Servidor **PostgreSQL** corriendo en el puerto 5432.
 * Archivos confidenciales (`appsettings.json`) apropiadamente configurados con tus credenciales.
 
 ### 2. Configurar el Entorno

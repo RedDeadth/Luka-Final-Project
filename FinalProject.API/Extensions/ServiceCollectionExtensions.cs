@@ -6,7 +6,7 @@ using FinalProject.Infrastructure.Services;
 using FinalProject.Infrastructure.Jobs;
 using Microsoft.EntityFrameworkCore;
 using Hangfire;
-using Hangfire.MySql;
+using Hangfire.PostgreSql;
 
 namespace FinalProject.API.Extensions;
 
@@ -45,9 +45,8 @@ public static class ServiceCollectionExtensions
             throw new InvalidOperationException("Database connection string not configured");
         }
 
-        var serverVersion = new MySqlServerVersion(new Version(9, 2, 0));
         services.AddDbContext<LukitasDbContext>(options =>
-            options.UseMySql(connectionString, serverVersion));
+            options.UseNpgsql(connectionString));
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -64,20 +63,7 @@ public static class ServiceCollectionExtensions
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
             .UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
-            .UseStorage(new MySqlStorage(
-                connectionString,
-                new MySqlStorageOptions
-                {
-                    TransactionIsolationLevel = System.Transactions.IsolationLevel.ReadCommitted,
-                    QueuePollInterval = TimeSpan.FromSeconds(15),
-                    JobExpirationCheckInterval = TimeSpan.FromHours(1),
-                    CountersAggregateInterval = TimeSpan.FromMinutes(5),
-                    PrepareSchemaIfNecessary = true,
-                    DashboardJobListLimit = 50000,
-                    TransactionTimeout = TimeSpan.FromMinutes(1),
-                    TablesPrefix = "Hangfire"
-                }
-            )));
+            .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
 
         services.AddHangfireServer(options =>
         {
