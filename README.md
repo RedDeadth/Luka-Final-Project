@@ -43,12 +43,11 @@ cp FinalProject.API/appsettings.example.json FinalProject.API/appsettings.json
 ```
 *(No olvides inyectar en este nuevo archivo tu frase semilla secreta JWT y acceso a la Base de Datos).*
 
-### 3. Migraciones y Base de Datos
-Aplicar el esquema inicial en Entity Framework:
-```bash
-cd FinalProject.Infrastructure
-dotnet ef database update --startup-project ../FinalProject.API
-```
+### 3. Base de Datos (Database-First Scaffolding)
+Este proyecto ha sido diseñado con el enfoque **Database-First** (Scaffolding) en lugar de Migraciones guiadas por código. 
+Para configurar tus tablas:
+1. Ejecuta el script maestro corporativo `database_schema.sql` directamente en tu consola de base de datos.
+2. Entity Framework Core se encargará de mapear de forma automática sus entidades contra la estructura ya construida.
 
 ### 4. Ejecución (Modo Desarrollo)
 Lanza la API con Swagger de manera nativa:
