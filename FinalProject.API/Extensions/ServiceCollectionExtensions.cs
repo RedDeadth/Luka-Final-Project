@@ -14,13 +14,11 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        // Registrar MediatR - handlers están en Infrastructure
         services.AddMediatR(cfg => {
             cfg.RegisterServicesFromAssembly(typeof(FinalProject.Application.Common.ICommand).Assembly);
             cfg.RegisterServicesFromAssembly(typeof(FinalProject.Infrastructure.Handlers.Auth.LoginCommandHandler).Assembly);
         });
         
-        // Registrar servicios de negocio (implementaciones en Infrastructure) - mantener para compatibilidad con V1
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICampaignService, CampaignService>();
         services.AddScoped<IStudentService, StudentService>();
@@ -32,7 +30,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICouponService, CouponService>();
         services.AddScoped<ITransferService, TransferService>();
 
-        // Registrar servicio de hashing de contraseñas
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
         return services;
@@ -40,7 +37,6 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // Obtener connection string (prioridad a variable de entorno DATABASE_URL de Render)
         var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
                             ?? configuration.GetConnectionString("DefaultConnection");
 
@@ -61,11 +57,9 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddHangfireServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // Obtener connection string (prioridad a variable de entorno)
         var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
                             ?? configuration.GetConnectionString("DefaultConnection");
 
-        // Configurar Hangfire con MySQL Storage
         services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
             .UseSimpleAssemblyNameTypeSerializer()
@@ -85,14 +79,12 @@ public static class ServiceCollectionExtensions
                 }
             )));
 
-        // Agregar el servidor de Hangfire
         services.AddHangfireServer(options =>
         {
             options.WorkerCount = 5;
             options.ServerName = "FinalProject-HangfireServer";
         });
 
-        // Registrar Jobs como servicios
         services.AddScoped<ExpireCouponsJob>();
         services.AddScoped<DataCleanupJob>();
         services.AddScoped<DailyStatisticsJob>();

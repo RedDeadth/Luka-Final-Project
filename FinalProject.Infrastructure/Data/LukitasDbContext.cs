@@ -51,7 +51,6 @@ public partial class LukitasDbContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            // Fallback - should use configuration from appsettings.json
             optionsBuilder.UseMySql("server=127.0.0.1;port=3306;database=lukitas_db;user=lukitas_user;password=lukitas123;AllowPublicKeyRetrieval=True;SslMode=Preferred", 
                 new MySqlServerVersion(new Version(9, 2, 0)));
         }

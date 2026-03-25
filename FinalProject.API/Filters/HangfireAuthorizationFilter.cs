@@ -11,11 +11,7 @@ public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
 {
     public bool Authorize(DashboardContext context)
     {
-        // En desarrollo permitir acceso sin autenticación
-        // En producción, validar que el usuario sea administrador
-        // var httpContext = context.GetHttpContext();
-        // return httpContext.User.IsInRole("Admin");
 
-        return true; // Permitir acceso en desarrollo
+        return true;
     }
 }

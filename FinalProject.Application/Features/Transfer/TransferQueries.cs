@@ -5,6 +5,5 @@ using MediatR;
 
 namespace FinalProject.Application.Features.Transfer;
 
-// Queries
 public record GetTransferByIdQuery(int Id) : IRequest<Result<TransferResponseDto>>;
 public record GetTransfersByAccountQuery(int AccountId, int Page, int PageSize) : IRequest<Result<PaginatedResult<TransferResponseDto>>>;

@@ -4,15 +4,12 @@ using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar puerto dinámico para Render (o local 5140)
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5140";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 builder.Services.AddControllers();
-// builder.Services.AddOpenApi(); // removed in favor of Swashbuckle
 builder.Services.AddSwaggerGen();
 
-// CORS para React (Development y Production)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
@@ -24,7 +21,6 @@ builder.Services.AddCors(options =>
             "http://127.0.0.1:5173"
         };
 
-        // Agregar frontend de producción si está configurado
         var frontendUrl = builder.Configuration["FrontendUrl"];
         if (!string.IsNullOrEmpty(frontendUrl))
         {
@@ -46,7 +42,6 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    // app.MapOpenApi(); // removed in favor of Swashbuckle
     app.UseSwagger();
     app.UseSwaggerUI(c => {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "FinalProject API V1");
@@ -59,11 +54,9 @@ app.UseCors("AllowReact");
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseMiddleware<LoggingMiddleware>();
 
-// app.UseHttpsRedirection(); // Disabled for local testing
 
 app.UseMiddleware<JwtAuthMiddleware>();
 
-// Configurar Hangfire Dashboard (opcional - solo en desarrollo)
 if (app.Environment.IsDevelopment())
 {
     app.UseHangfireDashboard("/hangfire", new DashboardOptions
@@ -73,7 +66,6 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Configurar Jobs Recurrentes
 HangfireJobsConfiguration.ConfigureRecurringJobs();
 
 app.MapControllers();

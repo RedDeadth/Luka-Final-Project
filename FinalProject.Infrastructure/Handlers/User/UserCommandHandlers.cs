@@ -32,14 +32,12 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
         {
             var dto = request.Dto;
 
-            // Check if email already exists
             var existingUser = await _unitOfWork.Users.Query(u => u.Email == dto.Email)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (existingUser != null)
                 return Result<UserDto>.Failure("User with this email already exists");
 
-            // Get role by name
             var role = await _unitOfWork.Roles.Query(r => r.Name == dto.Role)
                 .FirstOrDefaultAsync(cancellationToken);
 

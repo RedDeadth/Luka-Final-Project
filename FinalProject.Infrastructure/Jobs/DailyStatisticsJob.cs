@@ -29,7 +29,6 @@ public class DailyStatisticsJob
             var tomorrow = today.AddDays(1);
             var todayDateOnly = DateOnly.FromDateTime(DateTime.UtcNow);
 
-            // Calcular estadísticas del día
             var todaySales = await _context.Sales
                 .Where(s => s.SaleDate >= today && s.SaleDate < tomorrow)
                 .CountAsync();
@@ -54,8 +53,6 @@ public class DailyStatisticsJob
             _logger.LogInformation($"  - Campañas activas: {activeCampaigns}");
             _logger.LogInformation($"  - Total usuarios: {totalUsers}");
 
-            // Aquí podrías guardar estas estadísticas en una tabla de auditoría si lo deseas
-            // Por ahora solo las registramos en los logs
 
             _logger.LogInformation("[Hangfire] DailyStatisticsJob completado.");
         }

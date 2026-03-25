@@ -10,7 +10,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     protected readonly LukitasDbContext _context;
     protected readonly DbSet<T> _dbSet;
     
-    // Límite máximo de registros por página para proteger la BD
     private const int MaxPageSize = 100;
 
     public GenericRepository(LukitasDbContext context)
@@ -30,7 +29,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     /// </summary>
     public async Task<PaginatedResult<T>> GetAllAsync(int page = 1, int pageSize = 20)
     {
-        // Validar y limitar parámetros
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
         
@@ -54,7 +52,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     /// </summary>
     public async Task<PaginatedResult<T>> FindAsync(Expression<Func<T, bool>> predicate, int page = 1, int pageSize = 20)
     {
-        // Validar y limitar parámetros
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
         

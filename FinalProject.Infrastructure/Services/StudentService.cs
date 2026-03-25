@@ -17,12 +17,10 @@ public class StudentService : IStudentService
 
     public IQueryable<CampaignResponseDto> GetAvailableCampaigns(int studentId)
     {
-        // Subconsulta para obtener IDs de campañas inscritas
         var enrolledCampaignIds = _context.Accounts
             .Where(a => a.UserId == studentId)
             .Select(a => a.CampaignId);
 
-        // Retorna IQueryable para que el filtrado se haga en BD
         return _context.Campaigns
             .Where(c => c.Active == true && 
                        c.EndDate >= DateOnly.FromDateTime(DateTime.Now) &&

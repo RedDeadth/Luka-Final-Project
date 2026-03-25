@@ -25,10 +25,9 @@ public class DataCleanupJob
         {
             _logger.LogInformation("[Hangfire] Iniciando DataCleanupJob...");
 
-            var cutoffDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-6)); // Limpiar datos mayores a 6 meses
+            var cutoffDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-6));
             int totalDeleted = 0;
 
-            // Eliminar cupones vencidos y no usados mayores a 6 meses
             var oldExpiredCoupons = await _context.Coupons
                 .Where(c => c.Active == false && c.ExpirationDate < cutoffDate)
                 .ToListAsync();
@@ -40,8 +39,6 @@ public class DataCleanupJob
                 _logger.LogInformation($"[Hangfire] {oldExpiredCoupons.Count} cupones antiguos eliminados.");
             }
 
-            // Eliminar transferencias antiguas completadas (opcional, según reglas de negocio)
-            // Aquí puedes agregar más lógica de limpieza según necesites
 
             await _context.SaveChangesAsync();
             _logger.LogInformation($"[Hangfire] DataCleanupJob completado. Total de registros eliminados: {totalDeleted}");
